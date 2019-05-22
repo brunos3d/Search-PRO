@@ -144,7 +144,7 @@ namespace SearchPRO {
 		[MenuItem("Window/Search PRO %SPACE")]
 		public static SearchEditorWindow Init() {
 			SearchEditorWindow editor = CreateInstance<SearchEditorWindow>();
-			editor.position = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 300, 600, 600);
+			editor.position = new Rect(Screen.currentResolution.width / 2 - 300, Screen.currentResolution.height / 2 - 300, 600, 600);
 			editor.wantsMouseMove = true;
 			editor.ShowPopup();
 			FocusWindowIfItsOpen<SearchEditorWindow>();
@@ -184,6 +184,7 @@ namespace SearchPRO {
 			}
 
 			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.background);
+
 			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET)) / element_list_height);
 
 			Rect search_rect = new Rect(15.0f, 10.0f, position.width - 30.0f, 30.0f);
