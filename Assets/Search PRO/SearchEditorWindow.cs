@@ -177,6 +177,7 @@ namespace SearchPRO {
 					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), tags);
 					all_items.Add(new_item);
 					search_items.Add(new_item);
+					Debug.Log(obj);
 				}
 
 				RecalculateSize();
@@ -277,7 +278,7 @@ namespace SearchPRO {
 						GUILayout.FlexibleSpace();
 						foreach (string tag in item.tags) {
 							if (GUILayout.Button(HighlightText(tag, search), styles.tag_button, GUILayout.ExpandWidth(false))) {
-								new_search = "#tag:" + tag;
+								new_search = tag;
 							}
 						}
 						GUILayout.EndHorizontal();
@@ -288,6 +289,7 @@ namespace SearchPRO {
 				//Draw Element Button
 				if (DrawElementList(layout_rect, item.content, selected)) {
 					//GoToNode(node, true);
+					Selection.activeObject = EditorUtility.InstanceIDToObject(item.object_id);
 					break;
 				}
 				draw_index++;
@@ -310,7 +312,7 @@ namespace SearchPRO {
 					foreach (SearchItem item in all_items) {
 						if (Regex.IsMatch(item.title, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
-							|| item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase))) {
+							|| (enableTags && item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase)))) {
 							search_items.Add(item);
 						}
 					}
