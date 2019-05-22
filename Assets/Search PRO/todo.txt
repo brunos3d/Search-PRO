@@ -1,0 +1,16 @@
+search assets
+
+search gameobjects
+
+search settings
+
+search types to add in component
+
+search commands
+
+
+
+
+
+
+
