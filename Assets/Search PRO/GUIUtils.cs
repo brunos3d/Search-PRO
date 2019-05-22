@@ -4,6 +4,11 @@ using UnityEditor;
 
 namespace SearchPRO {
 	public static class GUIUtils {
+
+		public static bool IsNullOrEmpty(this string input) {
+			return (input == null || input.Length == 0);
+		}
+
 		public static float GetTextWidth(string text) {
 			return GetTextSize(text, EditorStyles.label).x;
 		}

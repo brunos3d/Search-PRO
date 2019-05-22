@@ -4,6 +4,7 @@ using UnityObject = UnityEngine.Object;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace SearchPRO {
 	public class SearchEditorWindow : EditorWindow {
@@ -12,11 +13,13 @@ namespace SearchPRO {
 
 			public readonly Texture search_icon;
 
+			public readonly GUIStyle window_header = (GUIStyle)"AppToolbar";
+
+			public readonly GUIStyle window_background = (GUIStyle)"grey_border";
+
 			public readonly GUIStyle label = EditorStyles.label;
 
-			public readonly GUIStyle tag_button = EditorStyles.miniButton;
-
-			public readonly GUIStyle background = (GUIStyle)"grey_border";
+			public readonly GUIStyle tag_button;
 
 			public readonly GUIStyle search_bar;
 
@@ -31,12 +34,15 @@ namespace SearchPRO {
 			public readonly GUIStyle on_search_description_item;
 
 			public Styles() {
+				search_icon = EditorGUIUtility.FindTexture("Search Icon");
+
+				tag_button = new GUIStyle(EditorStyles.miniButton);
+				tag_button.richText = true;
+
 				search_bar = GlobalSkin.searchBar;
 				search_label = GlobalSkin.searchLabel;
 				search_title_item = GlobalSkin.searchTitleItem;
 				search_description_item = GlobalSkin.searchDescriptionItem;
-
-				search_icon = EditorGUIUtility.FindTexture("Search Icon");
 
 				on_search_title_item = new GUIStyle(GlobalSkin.searchTitleItem);
 				on_search_description_item = new GUIStyle(GlobalSkin.searchDescriptionItem);
@@ -100,6 +106,12 @@ namespace SearchPRO {
 
 
 
+		private string search;
+
+		private string new_search;
+
+		private bool need_refocus;
+
 		private bool drag_scroll;
 
 		private bool enable_already;
@@ -116,8 +128,6 @@ namespace SearchPRO {
 
 		private int view_element_capacity;
 
-
-		public string search = string.Empty;
 
 		public List<SearchItem> all_items = new List<SearchItem>();
 
@@ -158,10 +168,13 @@ namespace SearchPRO {
 				if (styles == null) {
 					styles = new Styles();
 				}
+
+				need_refocus = true;
 				element_list_height = sliderValue;
 
 				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), obj.GetInstanceID().ToString());
+					string[] tags = { "123", "456", "789", "000", "ABC" };
+					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), tags);
 					all_items.Add(new_item);
 					search_items.Add(new_item);
 				}
@@ -184,21 +197,25 @@ namespace SearchPRO {
 				OnEnable();
 			}
 
-			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.background);
+			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.window_background);
+
+			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, WINDOW_HEAD_HEIGHT), GUIContent.none, styles.window_header);
 
 			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET)) / element_list_height);
 
 			KeyboardInputGUI();
+			RefreshSearchControl();
 
 			Rect search_rect = new Rect(15.0f, 10.0f, position.width - 30.0f, 30.0f);
 			Rect search_icon_rect = new Rect(20.0f, 13.0f, 23.0f, 23.0f);
 
-			//Search Bar
+			// Search Bar 
 			GUI.SetNextControlName("GUIControlSearchBoxTextField");
-			string new_search = GUI.TextField(search_rect, search, styles.search_bar);
+			new_search = GUI.TextField(search_rect, new_search, styles.search_bar);
 
-			if (new_search != search) {
-				SearchGO(new_search);
+			if (need_refocus) {
+				GUI.FocusControl("GUIControlSearchBoxTextField");
+				need_refocus = false;
 			}
 
 			GUI.DrawTexture(search_icon_rect, styles.search_icon);
@@ -259,8 +276,8 @@ namespace SearchPRO {
 						GUILayout.BeginHorizontal();
 						GUILayout.FlexibleSpace();
 						foreach (string tag in item.tags) {
-							if (GUILayout.Button(tag, styles.tag_button, GUILayout.ExpandWidth(false))) {
-								search = "#tag:" + tag;
+							if (GUILayout.Button(HighlightText(tag, search), styles.tag_button, GUILayout.ExpandWidth(false))) {
+								new_search = "#tag:" + tag;
 							}
 						}
 						GUILayout.EndHorizontal();
@@ -283,7 +300,28 @@ namespace SearchPRO {
 			Repaint();
 		}
 
+		void RefreshSearchControl() {
+			if (search != new_search) {
+				if (new_search.IsNullOrEmpty()) {
+					search_items = new List<SearchItem>(all_items);
+				}
+				else {
+					search_items.Clear();
+					foreach (SearchItem item in all_items) {
+						if (Regex.IsMatch(item.title, Regex.Escape(new_search), RegexOptions.IgnoreCase)
+							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
+							|| item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase))) {
+							search_items.Add(item);
+						}
+					}
+				}
+				search = new_search;
+				RecalculateSize();
+			}
+		}
+
 		public string HighlightText(string text, string format) {
+			if (text.IsNullOrEmpty() || format.IsNullOrEmpty()) return text;
 			return Regex.Replace(text, format, (match) => string.Format("<color=#ffff00ff><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
 		}
 
@@ -296,7 +334,7 @@ namespace SearchPRO {
 			Rect subtitle_rect = new Rect(title_rect);
 
 			GUI.Label(icon_rect, content.image);
-			if (!string.IsNullOrEmpty(search)) {
+			if (!search.IsNullOrEmpty()) {
 				string title = HighlightText(content.text, search);
 				EditorGUI.LabelField(title_rect, title, selected ? styles.on_search_title_item : styles.search_title_item);
 
@@ -363,75 +401,75 @@ namespace SearchPRO {
 					this.Close();
 				}
 				if (!current.control) {
-					char current_char = Event.current.character;
-					if (char.IsNumber(current_char)) {
-						selected_index = (int)(scroll_pos + (char.GetNumericValue(current_char))) - 1;
-						if (selected_index < 0) {
+					//char current_char = Event.current.character;
+					//if (char.IsNumber(current_char)) {
+					//	selected_index = (int)(scroll_pos + (char.GetNumericValue(current_char))) - 1;
+					//	if (selected_index < 0) {
+					//		selected_index = 0;
+					//	}
+					//	else if (selected_index >= search_items.Count) {
+					//		selected_index = search_items.Count - 1;
+					//		scroll_pos = search_items.Count;
+					//	}
+					//	else if (selected_index >= scroll_pos + view_element_capacity) {
+					//		scroll_pos += Mathf.Abs(selected_index - view_element_capacity);
+					//	}
+					//	current.Use();
+					//}
+					//else {
+					if (current.keyCode == KeyCode.Home) {
+						selected_index = 0;
+						scroll_pos = 0.0f;
+						current.Use();
+					}
+					else if (current.keyCode == KeyCode.End) {
+						selected_index = search_items.Count - 1;
+						scroll_pos = search_items.Count;
+						current.Use();
+					}
+					else if (current.keyCode == KeyCode.PageDown) {
+						selected_index += view_element_capacity;
+						scroll_pos += view_element_capacity;
+						if (selected_index >= search_items.Count) {
 							selected_index = 0;
-						}
-						else if (selected_index >= search_items.Count) {
-							selected_index = search_items.Count - 1;
-							scroll_pos = search_items.Count;
-						}
-						else if (selected_index >= scroll_pos + view_element_capacity) {
-							scroll_pos += Mathf.Abs(selected_index - view_element_capacity);
+							scroll_pos = 0.0f;
 						}
 						current.Use();
 					}
-					else {
-						if (current.keyCode == KeyCode.Home) {
-							selected_index = 0;
-							scroll_pos = 0.0f;
-							current.Use();
-						}
-						else if (current.keyCode == KeyCode.End) {
+					else if (current.keyCode == KeyCode.PageUp) {
+						selected_index -= view_element_capacity;
+						scroll_pos -= view_element_capacity;
+						if (selected_index < 0) {
 							selected_index = search_items.Count - 1;
 							scroll_pos = search_items.Count;
-							current.Use();
 						}
-						else if (current.keyCode == KeyCode.PageDown) {
-							selected_index += view_element_capacity;
-							scroll_pos += view_element_capacity;
-							if (selected_index >= search_items.Count) {
-								selected_index = 0;
-								scroll_pos = 0.0f;
-							}
-							current.Use();
-						}
-						else if (current.keyCode == KeyCode.PageUp) {
-							selected_index -= view_element_capacity;
-							scroll_pos -= view_element_capacity;
-							if (selected_index < 0) {
-								selected_index = search_items.Count - 1;
-								scroll_pos = search_items.Count;
-							}
-							current.Use();
-						}
-						else if (current.keyCode == KeyCode.DownArrow) {
-							selected_index++;
-							if (selected_index >= scroll_pos + view_element_capacity) {
-								scroll_pos++;
-							}
-							if (selected_index >= search_items.Count) {
-								selected_index = 0;
-								scroll_pos = 0.0f;
-							}
-							current.Use();
-						}
-						else if (current.keyCode == KeyCode.UpArrow) {
-							selected_index--;
-							if (selected_index < scroll_pos) {
-								scroll_pos--;
-							}
-							if (selected_index < 0) {
-								selected_index = search_items.Count - 1;
-								scroll_pos = search_items.Count;
-							}
-							current.Use();
-						}
-						else if ((current.keyCode == KeyCode.Return) || (current.keyCode == KeyCode.KeypadEnter)) {
-						}
+						current.Use();
 					}
+					else if (current.keyCode == KeyCode.DownArrow) {
+						selected_index++;
+						if (selected_index >= scroll_pos + view_element_capacity) {
+							scroll_pos++;
+						}
+						if (selected_index >= search_items.Count) {
+							selected_index = 0;
+							scroll_pos = 0.0f;
+						}
+						current.Use();
+					}
+					else if (current.keyCode == KeyCode.UpArrow) {
+						selected_index--;
+						if (selected_index < scroll_pos) {
+							scroll_pos--;
+						}
+						if (selected_index < 0) {
+							selected_index = search_items.Count - 1;
+							scroll_pos = search_items.Count;
+						}
+						current.Use();
+					}
+					else if ((current.keyCode == KeyCode.Return) || (current.keyCode == KeyCode.KeypadEnter)) {
+					}
+					//}
 				}
 				break;
 			}
@@ -454,13 +492,6 @@ namespace SearchPRO {
 			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (search_items.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 150.0f));
 
 			position = new Rect(pos, size);
-		}
-
-		void SearchGO(string new_search) {
-			if (new_search.Contains("*")) {
-				search_items = all_items;
-			}
-			search = new_search;
 		}
 	}
 }
