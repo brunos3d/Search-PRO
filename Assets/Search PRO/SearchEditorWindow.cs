@@ -158,6 +158,7 @@ namespace SearchPRO {
 				if (styles == null) {
 					styles = new Styles();
 				}
+				element_list_height = sliderValue;
 
 				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
 					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), obj.GetInstanceID().ToString());
