@@ -160,7 +160,7 @@ namespace SearchPRO {
 				}
 
 				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-					SearchItem new_item = new SearchItem(obj.name, string.Empty, obj.GetInstanceID(), obj.GetInstanceID().ToString());
+					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), obj.GetInstanceID().ToString());
 					all_items.Add(new_item);
 					search_items.Add(new_item);
 				}
@@ -186,6 +186,8 @@ namespace SearchPRO {
 			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.background);
 
 			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET)) / element_list_height);
+
+			KeyboardInputGUI();
 
 			Rect search_rect = new Rect(15.0f, 10.0f, position.width - 30.0f, 30.0f);
 			Rect search_icon_rect = new Rect(20.0f, 13.0f, 23.0f, 23.0f);
