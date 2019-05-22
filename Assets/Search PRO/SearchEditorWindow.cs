@@ -144,9 +144,9 @@ namespace SearchPRO {
 		[MenuItem("Window/Search PRO %SPACE")]
 		public static SearchEditorWindow Init() {
 			SearchEditorWindow editor = CreateInstance<SearchEditorWindow>();
-			editor.position = new Rect(Screen.currentResolution.width / 2 - 300, Screen.currentResolution.height / 2 - 300, 600, 600);
 			editor.wantsMouseMove = true;
 			editor.ShowPopup();
+			editor.RecalculateSize();
 			FocusWindowIfItsOpen<SearchEditorWindow>();
 			return editor;
 		}
@@ -450,8 +450,8 @@ namespace SearchPRO {
 				width = Mathf.Max(width, GUIUtils.GetTextWidth(item.content.text, styles.search_title_item) + 85.0f + tags_width);
 			}
 			width = Mathf.Max(Screen.currentResolution.width / 2.0f, width);
-			Vector2 pos = new Vector2(Screen.currentResolution.width / 2.0f - width / 2.0f, 120.0f);
-			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (search_items.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 200.0f));
+			Vector2 pos = new Vector2(Screen.currentResolution.width / 2.0f - width / 2.0f, 100.0f);
+			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (search_items.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 150.0f));
 
 			position = new Rect(pos, size);
 		}
