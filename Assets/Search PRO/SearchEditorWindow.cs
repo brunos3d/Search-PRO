@@ -392,6 +392,7 @@ namespace SearchPRO {
 						if (Regex.IsMatch(item.title, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| (enableTags && item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase)))) {
+
 							CommandItem command = (CommandItem)item;
 							if (command == null) {
 								search_items.Add(item);
@@ -453,7 +454,7 @@ namespace SearchPRO {
 
 		public string HighlightText(string text, string format) {
 			if (text.IsNullOrEmpty() || format.IsNullOrEmpty()) return text;
-			return Regex.Replace(text, format, (match) => string.Format("<color=#000000><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
+			return Regex.Replace(text, format, (match) => string.Format("<color=#FFFF00><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
 		}
 
 		public bool DrawElementList(Rect rect, GUIContent content, bool selected) {

@@ -7,28 +7,28 @@ namespace SearchPRO {
 	public static class TransformCommands {
 
 		[Command("Reset Position", "Moves the selected object to zero position")]
-		public static void ResetPosition() {
-			Undo.RecordObjects(Selection.transforms, "Reset Position");
-			foreach (var tr in Selection.transforms) {
+		public static void ResetPosition(Transform[] transforms) {
+			Undo.RecordObjects(transforms, "Reset Position");
+			foreach (var tr in transforms) {
 				tr.position = Vector3.zero;
 			}
 		}
 
 		[Command("Reset Rotation", "Sets the rotation of the selected object to zero")]
-		public static void ResetRotation() {
-			Undo.RecordObjects(Selection.transforms, "Reset Rotation");
-			foreach (var tr in Selection.transforms) {
+		public static void ResetRotation(Transform[] transforms) {
+			Undo.RecordObjects(transforms, "Reset Rotation");
+			foreach (var tr in transforms) {
 				tr.rotation = Quaternion.identity;
 			}
 		}
 
 		[Command("Selection LookAt", "Makes all selected objects to look at the last selected object.")]
-		public static void SelectionLookAt() {
-			Undo.RecordObjects(Selection.transforms, "Selection LookAt");
-			int last = Selection.gameObjects.Length;
+		public static void SelectionLookAt(Transform[] transforms) {
+			Undo.RecordObjects(transforms, "Selection LookAt");
+			int last = transforms.Length;
 			for (int id = 0; id < last; id++) {
 				if (id < last - 1) {
-					Selection.gameObjects[id].transform.LookAt(Selection.gameObjects[last - 1].transform);
+					transforms[id].LookAt(transforms[last - 1]);
 				}
 			}
 		}
