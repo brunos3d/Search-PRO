@@ -2,9 +2,12 @@
 using UnityEngine;
 using UnityObject = UnityEngine.Object;
 using UnityEditor;
+using System;
+using System.Linq;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Linq;
+using UnityEditor.SceneManagement;
 
 namespace SearchPRO {
 	public class SearchEditorWindow : EditorWindow {
@@ -58,47 +61,6 @@ namespace SearchPRO {
 			}
 		}
 
-		public class SearchItem {
-
-			public Texture icon;
-
-			public string title;
-
-			public string description;
-
-			public int object_id;
-
-			public string[] tags;
-
-			public GUIContent content { get; private set; }
-
-			public SearchItem(GUIContent content, int object_id, params string[] tags) {
-				this.title = content.text;
-				this.description = content.tooltip;
-				this.icon = content.image;
-				this.object_id = object_id;
-				this.tags = tags;
-				this.content = new GUIContent(content);
-			}
-
-			public SearchItem(string title, string description, int object_id, params string[] tags) {
-				this.title = title;
-				this.description = description;
-				this.object_id = object_id;
-				this.tags = tags;
-				this.content = new GUIContent(title, description);
-			}
-
-			public SearchItem(string title, string description, Texture icon, int object_id, params string[] tags) {
-				this.title = title;
-				this.description = description;
-				this.icon = icon;
-				this.object_id = object_id;
-				this.tags = tags;
-				this.content = new GUIContent(title, icon, description);
-			}
-		}
-
 
 		private static Styles styles;
 
@@ -132,6 +94,8 @@ namespace SearchPRO {
 		private bool enable_layout;
 
 		private bool enable_scroll;
+
+		private bool register_undo;
 
 		private float scroll_pos;
 
@@ -185,12 +149,30 @@ namespace SearchPRO {
 				need_refocus = true;
 				element_list_height = sliderValue;
 
-				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-					string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
-					SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
-					all_items.Add(new_item);
-					search_items.Add(new_item);
+				foreach (Type type in ReflectionUtils.GetTypesFrom(GetType().Assembly)) {
+					foreach (MethodInfo method in type.GetMethodsFrom()) {
+						CommandAttribute command = method.GetAttribute<CommandAttribute>(false);
+						if (command != null) {
+							if (command.validation == ValidationMode.EditorCommand
+								|| (command.validation == ValidationMode.AtLeastOneGameObject && Selection.activeGameObject)
+								|| (command.validation == ValidationMode.AtLeastTwoGameObjects && Selection.gameObjects.Length > 1)
+								|| (command.validation == ValidationMode.SelectionIsTypeOf && Selection.activeObject && command.explicit_type.IsAssignableFrom(Selection.activeObject.GetType()))
+								|| (command.validation == ValidationMode.GameObjectHasComponentOfType && Selection.activeGameObject && Selection.activeGameObject.GetComponent(command.explicit_type))
+								) {
+								CommandItem new_item = new CommandItem(command, method);
+								all_items.Add(new_item);
+								search_items.Add(new_item);
+							}
+						}
+					}
 				}
+
+				//foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
+				//	string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
+				//	SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
+				//	all_items.Add(new_item);
+				//	search_items.Add(new_item);
+				//}
 
 				RecalculateSize();
 				enable_already = true;
@@ -307,7 +289,42 @@ namespace SearchPRO {
 				//Draw Element Button
 				if (DrawElementList(layout_rect, item.content, selected)) {
 					//GoToNode(node, true);
-					Selection.activeObject = EditorUtility.InstanceIDToObject(item.object_id);
+					if (item is CommandItem) {
+						CommandItem command = (CommandItem)item;
+						if (command.flag.validation == ValidationMode.EditorCommand) {
+							command.method.Invoke(null, null);
+						}
+						else if (command.flag.validation == ValidationMode.AtLeastOneGameObject) {
+							if (Selection.activeGameObject) {
+								command.method.Invoke(null, null);
+							}
+						}
+						else if (command.flag.validation == ValidationMode.AtLeastTwoGameObjects) {
+							if (Selection.gameObjects.Length >= 2) {
+								command.method.Invoke(null, null);
+							}
+						}
+						else if (command.flag.validation == ValidationMode.SelectionIsTypeOf) {
+							if (Selection.activeObject && command.flag.explicit_type.IsAssignableFrom(Selection.activeObject.GetType())) {
+								command.method.Invoke(null, new object[] { Selection.activeObject });
+							}
+						}
+						else if (command.flag.validation == ValidationMode.GameObjectHasComponentOfType) {
+							if (Selection.activeObject) {
+								Component component = Selection.activeGameObject.GetComponent(command.flag.explicit_type);
+								if (component) {
+									command.method.Invoke(null, new object[] { component });
+								}
+							}
+						}
+						else {
+
+						}
+					}
+					else {
+						Selection.activeObject = EditorUtility.InstanceIDToObject((int)item.data);
+					}
+					Close();
 					break;
 				}
 				draw_index++;
