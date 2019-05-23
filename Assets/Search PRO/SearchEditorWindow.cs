@@ -399,11 +399,13 @@ namespace SearchPRO {
 							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| (enableTags && item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase)))) {
 
-							CommandItem command = (CommandItem)item;
-							if (command == null) {
-								search_items.Add(item);
+							if (item is CommandItem) {
+								CommandItem command = (CommandItem)item;
+								if (ValidateItem(command)) {
+									search_items.Add(item);
+								}
 							}
-							else if (ValidateItem(command)) {
+							else {
 								search_items.Add(item);
 							}
 						}
