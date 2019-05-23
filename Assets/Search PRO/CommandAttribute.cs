@@ -3,12 +3,14 @@ using System;
 
 namespace SearchPRO {
 
-	public enum ValidationMode {
-		EditorCommand,
-		SelectionIsTypeOf,
-		GameObjectHasComponentOfType,
-		AtLeastOneGameObject,
-		AtLeastTwoGameObjects,
+	public enum Validation {
+		None,
+		activeObject,
+		activeGameObject,
+		activeTransform,
+		objects,
+		gameObjects,
+		transforms,
 	}
 
 	[AttributeUsage(AttributeTargets.Method)]
@@ -20,30 +22,19 @@ namespace SearchPRO {
 
 		public string[] tags;
 
-		public ValidationMode validation;
-
-		public Type explicit_type;
+		public Validation validation;
 
 		public CommandAttribute(string title, string description, params string[] tags) {
 			this.tags = tags;
 			this.title = title;
 			this.description = description;
-			validation = ValidationMode.EditorCommand;
 		}
 
-		public CommandAttribute(string title, string description, ValidationMode validation, params string[] tags) {
+		public CommandAttribute(string title, string description, Validation validation, params string[] tags) {
 			this.tags = tags;
 			this.title = title;
 			this.validation = validation;
 			this.description = description;
-		}
-
-		public CommandAttribute(string title, string description, ValidationMode validation, Type explicit_type, params string[] tags) {
-			this.tags = tags;
-			this.title = title;
-			this.validation = validation;
-			this.description = description;
-			this.explicit_type = explicit_type;
 		}
 	}
 }

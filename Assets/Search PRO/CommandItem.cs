@@ -16,9 +16,12 @@ namespace SearchPRO {
 			}
 		}
 
-		public CommandItem(CommandAttribute flag, MethodInfo method) {
-			this.method = method;
+		public CommandItem(CommandAttribute flag, MethodInfo method, Validation validation) {
 			this.flag = flag;
+
+			flag.validation = validation;
+
+			this.method = method;
 			base.tags = flag.tags;
 			base.title = flag.title;
 			base.description = flag.description;

@@ -16,8 +16,6 @@ namespace SearchPRO {
 
 			public readonly Texture search_icon;
 
-			public readonly GUIStyle window_header = (GUIStyle)"AppToolbar";
-
 			public readonly GUIStyle window_background = (GUIStyle)"grey_border";
 
 			public readonly GUIStyle label = EditorStyles.label;
@@ -73,11 +71,13 @@ namespace SearchPRO {
 
 		private const string PREFS_ELEMENT_SIZE_SLIDER = "SearchPRO: SEW ElementSize Slider";
 
-		private readonly Color FOCUS_COLOR = new Color(62.0f / 255.0f, 95.0f / 255.0f, 150.0f / 255.0f);
+		private readonly Color FOCUS_COLOR = new Color(62.0f / 255.0f, 125.0f / 255.0f, 231.0f / 255.0f);
 
 		private readonly Color STRIP_COLOR_DARK = new Color(0.205f, 0.205f, 0.205f);
 
 		private readonly Color STRIP_COLOR_LIGHT = new Color(0.7f, 0.7f, 0.7f);
+
+		private readonly Color WINDOW_HEAD_COLOR = new Color(0.7f, 0.7f, 0.7f);
 
 
 
@@ -149,18 +149,44 @@ namespace SearchPRO {
 				need_refocus = true;
 				element_list_height = sliderValue;
 
+				// Pega todos os types na assembly atual
 				foreach (Type type in ReflectionUtils.GetTypesFrom(GetType().Assembly)) {
+					// Pega todos os methods do type atual
 					foreach (MethodInfo method in type.GetMethodsFrom()) {
+						// Pega e verifica a existencia do attributo
 						CommandAttribute command = method.GetAttribute<CommandAttribute>(false);
 						if (command != null) {
-							if (command.validation == ValidationMode.EditorCommand
-								|| (command.validation == ValidationMode.AtLeastOneGameObject && Selection.activeGameObject)
-								|| (command.validation == ValidationMode.AtLeastTwoGameObjects && Selection.gameObjects.Length > 1)
-								|| (command.validation == ValidationMode.SelectionIsTypeOf && Selection.activeObject && command.explicit_type.IsAssignableFrom(Selection.activeObject.GetType()))
-								|| (command.validation == ValidationMode.GameObjectHasComponentOfType && Selection.activeGameObject && Selection.activeGameObject.GetComponent(command.explicit_type))
-								) {
-								CommandItem new_item = new CommandItem(command, method);
-								all_items.Add(new_item);
+							Validation validation = Validation.None;
+
+							// Realiza a verificacao dos parametros e se o methodo pode ser chamado
+							foreach (ParameterInfo param in method.GetParameters()) {
+								Type param_type = param.ParameterType;
+
+								// Verifica se o tipo do parametro
+								if (typeof(GameObject).IsAssignableFrom(param_type)) {
+									validation = Validation.activeGameObject;
+								}
+								else if (typeof(GameObject[]).IsAssignableFrom(param_type)) {
+									validation = Validation.gameObjects;
+								}
+								else if (typeof(Transform).IsAssignableFrom(param_type)) {
+									validation = Validation.activeTransform;
+								}
+								else if (typeof(Transform[]).IsAssignableFrom(param_type)) {
+									validation = Validation.transforms;
+								}
+								else if (typeof(UnityObject).IsAssignableFrom(param_type)) {
+									validation = Validation.activeObject;
+								}
+								else if (typeof(UnityObject[]).IsAssignableFrom(param_type)) {
+									validation = Validation.objects;
+								}
+							}
+
+							CommandItem new_item = new CommandItem(command, method, validation);
+							all_items.Add(new_item);
+
+							if (ValidateItem(new_item)) {
 								search_items.Add(new_item);
 							}
 						}
@@ -194,7 +220,7 @@ namespace SearchPRO {
 
 			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.window_background);
 
-			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, WINDOW_HEAD_HEIGHT), GUIContent.none, styles.window_header);
+			EditorGUI.DrawRect(new Rect(0.0f, 0.0f, base.position.width, WINDOW_HEAD_HEIGHT), WINDOW_HEAD_COLOR);
 
 			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET)) / element_list_height);
 
@@ -289,42 +315,7 @@ namespace SearchPRO {
 				//Draw Element Button
 				if (DrawElementList(layout_rect, item.content, selected)) {
 					//GoToNode(node, true);
-					if (item is CommandItem) {
-						CommandItem command = (CommandItem)item;
-						if (command.flag.validation == ValidationMode.EditorCommand) {
-							command.method.Invoke(null, null);
-						}
-						else if (command.flag.validation == ValidationMode.AtLeastOneGameObject) {
-							if (Selection.activeGameObject) {
-								command.method.Invoke(null, null);
-							}
-						}
-						else if (command.flag.validation == ValidationMode.AtLeastTwoGameObjects) {
-							if (Selection.gameObjects.Length >= 2) {
-								command.method.Invoke(null, null);
-							}
-						}
-						else if (command.flag.validation == ValidationMode.SelectionIsTypeOf) {
-							if (Selection.activeObject && command.flag.explicit_type.IsAssignableFrom(Selection.activeObject.GetType())) {
-								command.method.Invoke(null, new object[] { Selection.activeObject });
-							}
-						}
-						else if (command.flag.validation == ValidationMode.GameObjectHasComponentOfType) {
-							if (Selection.activeObject) {
-								Component component = Selection.activeGameObject.GetComponent(command.flag.explicit_type);
-								if (component) {
-									command.method.Invoke(null, new object[] { component });
-								}
-							}
-						}
-						else {
-
-						}
-					}
-					else {
-						Selection.activeObject = EditorUtility.InstanceIDToObject((int)item.data);
-					}
-					Close();
+					ExecuteItem(item);
 					break;
 				}
 				draw_index++;
@@ -335,6 +326,59 @@ namespace SearchPRO {
 				enable_layout = true;
 			}
 			Repaint();
+		}
+
+		void ExecuteItem(SearchItem item) {
+			if (item is CommandItem) {
+				CommandItem command = (CommandItem)item;
+				Debug.Log((int)command.flag.validation);
+				switch (command.flag.validation) {
+					default:
+					case Validation.None:
+					command.method.Invoke(null, null);
+					break;
+
+					case Validation.activeGameObject:
+					if (Selection.activeGameObject) {
+						command.method.Invoke(null, new object[] { Selection.activeGameObject });
+					}
+					break;
+
+					case Validation.gameObjects:
+					if (Selection.gameObjects.Length > 0) {
+						command.method.Invoke(null, new object[] { Selection.gameObjects });
+					}
+					break;
+
+					case Validation.activeTransform:
+					if (Selection.activeTransform) {
+						command.method.Invoke(null, new object[] { Selection.activeTransform });
+					}
+					break;
+
+					case Validation.transforms:
+					if (Selection.transforms.Length > 0) {
+						command.method.Invoke(null, new object[] { Selection.transforms });
+					}
+					break;
+
+					case Validation.activeObject:
+					if (Selection.activeObject) {
+						command.method.Invoke(null, new object[] { Selection.activeGameObject });
+					}
+					break;
+
+					case Validation.objects:
+					if (Selection.objects.Length > 0) {
+						command.method.Invoke(null, new object[] { Selection.objects });
+					}
+					break;
+				}
+			}
+			else {
+				Selection.activeObject = EditorUtility.InstanceIDToObject((int)item.data);
+			}
+			Close();
 		}
 
 		void RefreshSearchControl() {
@@ -348,7 +392,13 @@ namespace SearchPRO {
 						if (Regex.IsMatch(item.title, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| (enableTags && item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase)))) {
-							search_items.Add(item);
+							CommandItem command = (CommandItem)item;
+							if (command == null) {
+								search_items.Add(item);
+							}
+							else if (ValidateItem(command)) {
+								search_items.Add(item);
+							}
 						}
 					}
 				}
@@ -357,9 +407,53 @@ namespace SearchPRO {
 			}
 		}
 
+		bool ValidateItem(CommandItem command) {
+			switch (command.flag.validation) {
+				default:
+				case Validation.None:
+				return true;
+
+				case Validation.activeGameObject:
+				if (Selection.activeGameObject) {
+					return true;
+				}
+				return false;
+
+				case Validation.gameObjects:
+				if (Selection.gameObjects.Length > 0) {
+					return true;
+				}
+				return false;
+
+				case Validation.activeTransform:
+				if (Selection.activeTransform) {
+					return true;
+				}
+				return false;
+
+				case Validation.transforms:
+				if (Selection.transforms.Length > 0) {
+					return true;
+				}
+				return false;
+
+				case Validation.activeObject:
+				if (Selection.activeObject) {
+					return true;
+				}
+				return false;
+
+				case Validation.objects:
+				if (Selection.objects.Length > 0) {
+					return true;
+				}
+				return false;
+			}
+		}
+
 		public string HighlightText(string text, string format) {
 			if (text.IsNullOrEmpty() || format.IsNullOrEmpty()) return text;
-			return Regex.Replace(text, format, (match) => string.Format("<color=#ffff00ff><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
+			return Regex.Replace(text, format, (match) => string.Format("<color=#000000><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
 		}
 
 		public bool DrawElementList(Rect rect, GUIContent content, bool selected) {
@@ -505,6 +599,7 @@ namespace SearchPRO {
 						current.Use();
 					}
 					else if ((current.keyCode == KeyCode.Return) || (current.keyCode == KeyCode.KeypadEnter)) {
+						ExecuteItem(search_items[selected_index]);
 					}
 					//}
 				}

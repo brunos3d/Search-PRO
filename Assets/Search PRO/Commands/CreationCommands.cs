@@ -6,46 +6,40 @@ using UnityObject = UnityEngine.Object;
 namespace SearchPRO {
 	public static class CreationCommands {
 
-		[Command("Create Cube",
-			"Create a primitive cube",
-			ValidationMode.EditorCommand)]
+		[Command("Create Cube", "Create a primitive cube")]
 		public static void CreateCube() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 
-		[Command("Create Sphere",
-			"Create a primitive sphere",
-			ValidationMode.EditorCommand)]
+		[Command("Create Sphere", "Create a primitive sphere")]
 		public static void CreateSphere() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 
-		[Command("Create Capsule",
-			"Create a primitive capsule",
-			ValidationMode.EditorCommand)]
+		[Command("Create Capsule", "Create a primitive capsule")]
 		public static void CreateCapsule() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 
-		[Command("Create Plane",
-			"Create a primitive plane",
-			ValidationMode.EditorCommand)]
+		[Command("Create Plane", "Create a primitive plane")]
 		public static void CreatePlane() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Plane);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 
-		[Command("Create Quad",
-			"Create a primitive quad",
-			ValidationMode.EditorCommand)]
+		[Command("Create Quad", "Create a primitive quad")]
 		public static void CreateQuad() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Quad);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 
-		[Command("Create Cylinder",
-			"Create a primitive cylinder",
-			ValidationMode.EditorCommand)]
+		[Command("Create Cylinder", "Create a primitive cylinder")]
 		public static void CreateCylinder() {
-			Selection.activeGameObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+			UnityObject instance = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+			Undo.RegisterCreatedObjectUndo(instance, "Create Cube");
 		}
 	}
 }
