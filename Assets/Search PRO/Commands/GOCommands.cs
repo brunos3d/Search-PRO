@@ -6,6 +6,10 @@ using UnityObject = UnityEngine.Object;
 namespace SearchPRO {
 	public static class GOCommands {
 
+		[Command("Rename", "Gives a new name to object.")]
+		public static void RenameGO(string search) {
+		}
+
 		[Command("Destroy Selection", "Will remove selected objects from your scene.")]
 		public static void DestroyGameObject(GameObject[] objs) {
 			foreach (GameObject go in objs) {

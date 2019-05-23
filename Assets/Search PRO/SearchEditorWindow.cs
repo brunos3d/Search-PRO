@@ -156,7 +156,7 @@ namespace SearchPRO {
 						// Pega e verifica a existencia do attributo
 						CommandAttribute command = method.GetAttribute<CommandAttribute>(false);
 						if (command != null) {
-							Validation validation = Validation.None;
+							Validation validation = command.validation;
 
 							// Realiza a verificacao dos parametros e se o methodo pode ser chamado
 							foreach (ParameterInfo param in method.GetParameters()) {
@@ -193,12 +193,12 @@ namespace SearchPRO {
 					}
 				}
 
-				//foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-				//	string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
-				//	SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
-				//	all_items.Add(new_item);
-				//	search_items.Add(new_item);
-				//}
+				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
+					string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
+					SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
+					all_items.Add(new_item);
+					search_items.Add(new_item);
+				}
 
 				RecalculateSize();
 				enable_already = true;
@@ -336,6 +336,12 @@ namespace SearchPRO {
 					default:
 					case Validation.None:
 					command.method.Invoke(null, null);
+					break;
+
+					case Validation.searchInput:
+					if (Selection.activeGameObject) {
+						command.method.Invoke(null, new object[] { search });
+					}
 					break;
 
 					case Validation.activeGameObject:

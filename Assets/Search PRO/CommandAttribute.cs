@@ -5,6 +5,7 @@ namespace SearchPRO {
 
 	public enum Validation {
 		None,
+		searchInput,
 		activeObject,
 		activeGameObject,
 		activeTransform,
@@ -28,6 +29,7 @@ namespace SearchPRO {
 			this.tags = tags;
 			this.title = title;
 			this.description = description;
+			this.validation = Validation.None;
 		}
 
 		public CommandAttribute(string title, string description, Validation validation, params string[] tags) {
