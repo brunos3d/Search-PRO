@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12001, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: SPLightSkin
+  m_Name: SPDarkSkin
   m_EditorClassIdentifier: 
   m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_box:
@@ -219,7 +219,7 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -1490,7 +1490,7 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 0.39215687}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -1541,7 +1541,7 @@ MonoBehaviour:
       m_Bottom: 0
     m_Font: {fileID: 0}
     m_FontSize: 18
-    m_FontStyle: 0
+    m_FontStyle: 2
     m_Alignment: 3
     m_WordWrap: 0
     m_RichText: 1
@@ -1556,11 +1556,11 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Active:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -1622,11 +1622,11 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Active:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -1652,10 +1652,10 @@ MonoBehaviour:
       m_ScaledBackgrounds: []
       m_TextColor: {r: 0, g: 0, b: 0, a: 1}
     m_Border:
-      m_Left: 5
-      m_Right: 5
-      m_Top: 5
-      m_Bottom: 5
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
     m_Margin:
       m_Left: 0
       m_Right: 0
@@ -1688,11 +1688,11 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0.16037738, g: 0.16037738, b: 0.16037738, a: 1}
+      m_TextColor: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 0.54901963}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0.16078432, g: 0.16078432, b: 0.16078432, a: 1}
+      m_TextColor: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 0.54901963}
     m_Active:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -1704,11 +1704,11 @@ MonoBehaviour:
     m_OnNormal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 1}
+      m_TextColor: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 0.54901963}
     m_OnHover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0.8117648, g: 0.8117648, b: 0.8117648, a: 1}
+      m_TextColor: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 0.54901963}
     m_OnActive:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []

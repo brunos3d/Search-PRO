@@ -27,6 +27,12 @@ namespace SearchPRO {
 			}
 		}
 
+		public static GUIStyle searchIconItem {
+			get {
+				return GetStyle("Search Icon Item");
+			}
+		}
+
 		public static GUIStyle searchTitleItem {
 			get {
 				return GetStyle("Search Title Item");

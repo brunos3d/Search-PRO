@@ -25,6 +25,8 @@ namespace SearchPRO {
 
 			public readonly GUIStyle search_label;
 
+			public readonly GUIStyle search_icon_item;
+
 			public readonly GUIStyle search_title_item;
 
 			public readonly GUIStyle search_description_item;
@@ -41,6 +43,7 @@ namespace SearchPRO {
 
 				search_bar = GlobalSkin.searchBar;
 				search_label = GlobalSkin.searchLabel;
+				search_icon_item = GlobalSkin.searchIconItem;
 				search_title_item = GlobalSkin.searchTitleItem;
 				search_description_item = GlobalSkin.searchDescriptionItem;
 
@@ -57,7 +60,7 @@ namespace SearchPRO {
 
 		public class SearchItem {
 
-			public Texture2D icon;
+			public Texture icon;
 
 			public string title;
 
@@ -69,6 +72,15 @@ namespace SearchPRO {
 
 			public GUIContent content { get; private set; }
 
+			public SearchItem(GUIContent content, int object_id, params string[] tags) {
+				this.title = content.text;
+				this.description = content.tooltip;
+				this.icon = content.image;
+				this.object_id = object_id;
+				this.tags = tags;
+				this.content = new GUIContent(content);
+			}
+
 			public SearchItem(string title, string description, int object_id, params string[] tags) {
 				this.title = title;
 				this.description = description;
@@ -77,9 +89,10 @@ namespace SearchPRO {
 				this.content = new GUIContent(title, description);
 			}
 
-			public SearchItem(string title, string description, Texture2D icon, int object_id, params string[] tags) {
+			public SearchItem(string title, string description, Texture icon, int object_id, params string[] tags) {
 				this.title = title;
 				this.description = description;
+				this.icon = icon;
 				this.object_id = object_id;
 				this.tags = tags;
 				this.content = new GUIContent(title, icon, description);
@@ -173,11 +186,10 @@ namespace SearchPRO {
 				element_list_height = sliderValue;
 
 				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-					string[] tags = { "123", "456", "789", "000", "ABC" };
-					SearchItem new_item = new SearchItem(obj.name, "This is a simple subtitle.", obj.GetInstanceID(), tags);
+					string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
+					SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
 					all_items.Add(new_item);
 					search_items.Add(new_item);
-					Debug.Log(obj);
 				}
 
 				RecalculateSize();
@@ -216,6 +228,11 @@ namespace SearchPRO {
 
 			if (need_refocus) {
 				GUI.FocusControl("GUIControlSearchBoxTextField");
+				TextEditor txt = (TextEditor)GUIUtility.GetStateObject(typeof(TextEditor), GUIUtility.keyboardControl);
+				if (txt != null) {
+					txt.MoveLineEnd();
+					txt.SelectNone();
+				}
 				need_refocus = false;
 			}
 
@@ -279,6 +296,7 @@ namespace SearchPRO {
 						foreach (string tag in item.tags) {
 							if (GUILayout.Button(HighlightText(tag, search), styles.tag_button, GUILayout.ExpandWidth(false))) {
 								new_search = tag;
+								need_refocus = true;
 							}
 						}
 						GUILayout.EndHorizontal();
@@ -335,7 +353,7 @@ namespace SearchPRO {
 			Rect title_rect = new Rect(element_list_height + 5.0f, layout_rect.y, layout_rect.width - element_list_height - 10.0f, layout_rect.height);
 			Rect subtitle_rect = new Rect(title_rect);
 
-			GUI.Label(icon_rect, content.image);
+			GUI.Label(icon_rect, content.image, styles.search_icon_item);
 			if (!search.IsNullOrEmpty()) {
 				string title = HighlightText(content.text, search);
 				EditorGUI.LabelField(title_rect, title, selected ? styles.on_search_title_item : styles.search_title_item);
