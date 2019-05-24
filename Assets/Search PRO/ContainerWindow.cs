@@ -1,52 +1,45 @@
 ﻿#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace SearchPRO {
-	public class Interface {
-
-		public void OnEnable() {
-
-		}
-
-		public void OnDisable() {
-
-		}
-
-		public void OnGUI() {
-		}
-	}
-
 	public class ContainerWindow : EditorWindow {
 
-		private Interface user_interface;
+		private bool close_on_lost_focus;
 
-		public static ContainerWindow Instantiate(Interface user_interface, GUIContent title) {
+		private SearchInterface search_interface;
+
+		public static ContainerWindow Instantiate(SearchInterface search_interface, GUIContent title, bool close_on_lost_focus) {
 			ContainerWindow container = EditorWindow.CreateInstance<ContainerWindow>();
-			container.user_interface = user_interface;
+			container.search_interface = search_interface;
 			container.titleContent = title;
+			container.close_on_lost_focus = close_on_lost_focus;
 			container.Show();
 			return container;
 		}
 
 		void OnEnable() {
-			if (user_interface == null) {
+			if (search_interface == null) {
 				this.Close();
 			}
-
-			user_interface.OnEnable();
+			search_interface.OnEnable();
 		}
 
 		void OnDisable() {
-			if (user_interface != null) {
-				user_interface.OnDisable();
+			if (search_interface != null) {
+				search_interface.OnDisable();
 			}
 		}
 
 		void OnGUI() {
-			user_interface.OnGUI();
+			if (close_on_lost_focus && (focusedWindow != this || EditorApplication.isCompiling)) {
+				this.Close();
+			}
+			search_interface.OnGUI();
+		}
+
+		void OnSelectionChange() {
+			search_interface.OnSelectionChange();
 		}
 	}
 }
