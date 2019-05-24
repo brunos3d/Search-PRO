@@ -5,27 +5,21 @@ using System.Reflection;
 namespace SearchPRO {
 	public class CommandItem : SearchItem {
 
-		public CommandAttribute flag;
+		public CommandAttribute attribute;
 
-		public MethodInfo method {
-			get {
-				return (MethodInfo)base.data;
-			}
-			private set {
-				base.data = value;
-			}
+		public MethodInfo method;
+
+		public Validation validation;
+
+		public CommandItem(CommandAttribute attribute, MethodInfo method) {
+			this.attribute = attribute;
+			this.method = method;
 		}
 
-		public CommandItem(CommandAttribute flag, MethodInfo method, Validation validation) {
-			this.flag = flag;
-
-			flag.validation = validation;
-
+		public CommandItem(CommandAttribute attribute, MethodInfo method, Validation validation) {
+			this.attribute = attribute;
 			this.method = method;
-			base.tags = flag.tags;
-			base.title = flag.title;
-			base.description = flag.description;
-			base.content = new GUIContent(flag.title, flag.description);
+			this.validation = validation;
 		}
 	}
 }

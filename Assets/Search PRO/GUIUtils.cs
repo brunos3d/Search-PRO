@@ -1,12 +1,23 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
+using System;
 
 namespace SearchPRO {
 	public static class GUIUtils {
 
 		public static bool IsNullOrEmpty(this string input) {
 			return (input == null || input.Length == 0);
+		}
+
+		public static bool IsNullOrWhiteSpace(this string input) {
+			if (input == null) return true;
+
+			for (int i = 0; i < input.Length; i++) {
+				if (!Char.IsWhiteSpace(input[i])) return false;
+			}
+
+			return true;
 		}
 
 		public static float GetTextWidth(string text) {

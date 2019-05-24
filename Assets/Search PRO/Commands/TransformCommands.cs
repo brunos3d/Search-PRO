@@ -6,7 +6,10 @@ using UnityObject = UnityEngine.Object;
 namespace SearchPRO {
 	public static class TransformCommands {
 
-		[Command("Reset Position", "Moves the selected object to zero position")]
+		[Command]
+		[Category("Transform")]
+		[Title("Reset Position")]
+		[Description("Moves the selected object to zero position.")]
 		public static void ResetPosition(Transform[] transforms) {
 			Undo.RecordObjects(transforms, "Reset Position");
 			foreach (var tr in transforms) {
@@ -14,7 +17,10 @@ namespace SearchPRO {
 			}
 		}
 
-		[Command("Reset Rotation", "Sets the rotation of the selected object to zero")]
+		[Command]
+		[Category("Transform")]
+		[Title("Reset Rotation")]
+		[Description("Sets the rotation of the selected object to zero.")]
 		public static void ResetRotation(Transform[] transforms) {
 			Undo.RecordObjects(transforms, "Reset Rotation");
 			foreach (var tr in transforms) {
@@ -22,7 +28,10 @@ namespace SearchPRO {
 			}
 		}
 
-		[Command("Selection LookAt", "Makes all selected objects to look at the last selected object.")]
+		[Command]
+		[Category("Transform")]
+		[Title("Selection LookAt")]
+		[Description("Makes all selected objects to look at the last selected object.")]
 		public static void SelectionLookAt(Transform[] transforms) {
 			Undo.RecordObjects(transforms, "Selection LookAt");
 			int last = transforms.Length;

@@ -7,12 +7,18 @@ using System.Linq;
 namespace SearchPRO {
 	public static class SelectionCommands {
 
-		[Command("Select All", "Select all objects in scene")]
+		[Command]
+		[Category("Selection")]
+		[Title("Select All")]
+		[Description("Select all objects in scene.")]
 		public static void SelectAll() {
 			Selection.objects = Resources.FindObjectsOfTypeAll<GameObject>().Where(go => go.hideFlags == HideFlags.None).ToArray();
 		}
 
-		[Command("Clear Selection", "Clear selected objects")]
+		[Command]
+		[Category("Selection")]
+		[Title("Clear Selection")]
+		[Description("Clear selected objects.")]
 		public static void ClearSelection() {
 			Selection.objects = null;
 		}

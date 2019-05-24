@@ -105,10 +105,15 @@ namespace SearchPRO {
 
 		private int view_element_capacity;
 
+		public TreeNode<SearchItem> root_tree;
 
-		public List<SearchItem> all_items = new List<SearchItem>();
+		public TreeNode<SearchItem> current_tree;
 
-		public List<SearchItem> search_items = new List<SearchItem>();
+		public TreeNode<SearchItem> last_tree;
+
+		public TreeNode<SearchItem> selected_node;
+
+		public readonly List<TreeNode<SearchItem>> parents = new List<TreeNode<SearchItem>>();
 
 		public bool enableTags {
 			get {
@@ -125,6 +130,12 @@ namespace SearchPRO {
 			}
 			set {
 				EditorPrefs.SetFloat(PREFS_ELEMENT_SIZE_SLIDER, value);
+			}
+		}
+
+		public bool hasSearch {
+			get {
+				return !search.IsNullOrEmpty();
 			}
 		}
 
@@ -149,58 +160,71 @@ namespace SearchPRO {
 				need_refocus = true;
 				element_list_height = sliderValue;
 
+				root_tree = new TreeNode<SearchItem>(new GUIContent("Home"), null);
+
 				// Pega todos os types na assembly atual
 				foreach (Type type in ReflectionUtils.GetTypesFrom(GetType().Assembly)) {
 					// Pega todos os methods do type atual
 					foreach (MethodInfo method in type.GetMethodsFrom()) {
 						// Pega e verifica a existencia do attributo
-						CommandAttribute command = method.GetAttribute<CommandAttribute>(false);
-						if (command != null) {
-							Validation validation = command.validation;
+						CommandAttribute a_command = null;
+						CategoryAttribute a_category = null;
+						TitleAttribute a_title = null;
+						DescriptionAttribute a_description = null;
+						TagsAttribute a_tags = null;
 
-							// Realiza a verificacao dos parametros e se o methodo pode ser chamado
-							foreach (ParameterInfo param in method.GetParameters()) {
-								Type param_type = param.ParameterType;
+						string category = string.Empty;
+						string title = string.Empty;
+						string description = string.Empty;
+						string[] tags = new string[] { };
 
-								// Verifica se o tipo do parametro
-								if (typeof(GameObject).IsAssignableFrom(param_type)) {
-									validation = Validation.activeGameObject;
-								}
-								else if (typeof(GameObject[]).IsAssignableFrom(param_type)) {
-									validation = Validation.gameObjects;
-								}
-								else if (typeof(Transform).IsAssignableFrom(param_type)) {
-									validation = Validation.activeTransform;
-								}
-								else if (typeof(Transform[]).IsAssignableFrom(param_type)) {
-									validation = Validation.transforms;
-								}
-								else if (typeof(UnityObject).IsAssignableFrom(param_type)) {
-									validation = Validation.activeObject;
-								}
-								else if (typeof(UnityObject[]).IsAssignableFrom(param_type)) {
-									validation = Validation.objects;
+						foreach (Attribute attribute in method.GetCustomAttributes()) {
+							if (a_command == null) {
+								if (attribute is CommandAttribute) {
+									a_command = (CommandAttribute)attribute;
+									continue;
 								}
 							}
+							else {
+								if (a_category == null && attribute is CategoryAttribute) {
+									a_category = (CategoryAttribute)attribute;
+									a_command.category = a_category;
+									category = a_category.category;
+									continue;
+								}
+								if (a_title == null && attribute is TitleAttribute) {
+									a_title = (TitleAttribute)attribute;
+									a_command.title = a_title;
+									title = a_title.title;
+									continue;
+								}
+								if (a_description == null && attribute is DescriptionAttribute) {
+									a_description = (DescriptionAttribute)attribute;
+									a_command.description = a_description;
+									description = a_description.description;
+									continue;
+								}
+								if (a_tags == null && attribute is TagsAttribute) {
+									a_tags = (TagsAttribute)attribute;
+									a_command.tags = a_tags;
+									tags = a_tags.tags;
+									continue;
+								}
+							}
+						}
 
-							CommandItem new_item = new CommandItem(command, method, validation);
-							all_items.Add(new_item);
-
-							if (ValidateItem(new_item)) {
-								search_items.Add(new_item);
+						if (a_command != null) {
+							if (a_category == null) {
+								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(a_command, method), tags);
+							}
+							else {
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(a_command, method), tags);
 							}
 						}
 					}
 				}
 
-				foreach (UnityObject obj in Resources.FindObjectsOfTypeAll<UnityObject>()) {
-					string[] tags = { "ID: " + obj.GetInstanceID().ToString(), obj.GetType().Name };
-					SearchItem new_item = new SearchItem(EditorGUIUtility.ObjectContent(obj, obj.GetType()), obj.GetInstanceID(), tags);
-					all_items.Add(new_item);
-					search_items.Add(new_item);
-				}
-
-				RecalculateSize();
+				GoToHome();
 				enable_already = true;
 			}
 		}
@@ -246,7 +270,29 @@ namespace SearchPRO {
 
 			GUI.DrawTexture(search_icon_rect, styles.search_icon);
 
-			int current_tree_count = search_items == null ? 0 : search_items.Count;
+			if (enable_layout) {
+				GUILayout.Space(50.0f);
+
+				GUILayout.BeginHorizontal();
+				{
+					if (hasSearch && current_tree.content.text == "#Search") {
+						if (GUILayout.Button(new GUIContent("Home"), GUILayout.ExpandWidth(false), GUILayout.Height(20.0f))) {
+							GoToHome();
+						}
+					}
+					for (int id = parents.Count - 1; id >= 0; id--) {
+						TreeNode<SearchItem> parent = parents[id];
+						if (GUILayout.Button(parent.content.text, GUILayout.ExpandWidth(false), GUILayout.Height(20.0f))) {
+							GoToNode(parent, true);
+							break;
+						}
+					}
+					GUILayout.Button(current_tree.content.text, GUILayout.ExpandWidth(false), GUILayout.Height(20.0f));
+				}
+				GUILayout.EndHorizontal();
+			}
+
+			int current_tree_count = current_tree == null ? 0 : current_tree.Count;
 
 			enable_scroll = view_element_capacity < current_tree_count;
 
@@ -273,7 +319,7 @@ namespace SearchPRO {
 			for (int id = first_scroll_index; id < last_scroll_index; id++) {
 				bool selected = false;
 
-				SearchItem item = search_items[id];
+				TreeNode<SearchItem> node = current_tree[id];
 				Rect layout_rect = new Rect(1.0f, WINDOW_HEAD_HEIGHT + draw_index * element_list_height, position.width - (enable_scroll ? 19.0f : 2.0f), element_list_height);
 
 				if (id % 2 == 1) {
@@ -290,7 +336,7 @@ namespace SearchPRO {
 				//Draw Selection Box
 				if (selected_index == draw_index + first_scroll_index || (Event.current.type == EventType.MouseMove && layout_rect.Contains(Event.current.mousePosition))) {
 					selected = true;
-					//selected_node = node;
+					selected_node = node;
 					selected_index = draw_index + first_scroll_index;
 					EditorGUI.DrawRect(layout_rect, FOCUS_COLOR);
 				}
@@ -301,7 +347,7 @@ namespace SearchPRO {
 						GUILayout.BeginArea(new Rect(layout_rect.x, layout_rect.y + 5.0f, layout_rect.width, layout_rect.height));
 						GUILayout.BeginHorizontal();
 						GUILayout.FlexibleSpace();
-						foreach (string tag in item.tags) {
+						foreach (string tag in node.tags) {
 							if (GUILayout.Button(HighlightText(tag, search), styles.tag_button, GUILayout.ExpandWidth(false))) {
 								new_search = tag;
 								need_refocus = true;
@@ -313,9 +359,8 @@ namespace SearchPRO {
 				}
 
 				//Draw Element Button
-				if (DrawElementList(layout_rect, item.content, selected)) {
-					//GoToNode(node, true);
-					ExecuteItem(item);
+				if (DrawElementList(layout_rect, node.content, selected)) {
+					GoToNode(node, true);
 					break;
 				}
 				draw_index++;
@@ -328,20 +373,67 @@ namespace SearchPRO {
 			Repaint();
 		}
 
+		void GoToHome() {
+			GoToNode(root_tree, false);
+			new_search = string.Empty;
+			GUI.FocusControl("GUIControlSearchBoxTextField");
+			need_refocus = true;
+		}
+
+		void GoToParent() {
+			if (!current_tree.isRoot) {
+				GoToNode(current_tree.parent, false);
+			}
+		}
+
+		void GoToNode(TreeNode<SearchItem> node, bool call_if_is_leaf) {
+			if (node == null) return;
+			enable_layout = false;
+
+			if (node.isLeaf) {
+				if (call_if_is_leaf) {
+					ExecuteItem(node.data);
+					this.Close();
+				}
+				else {
+					GUI.FocusControl("GUIControlSearchBoxTextField");
+					need_refocus = true;
+				}
+			}
+			else {
+				if (current_tree != null && !current_tree.isSearch) {
+					last_tree = current_tree;
+				}
+				current_tree = node;
+				if (last_tree == null) {
+					last_tree = current_tree;
+				}
+
+				parents.Clear();
+				TreeNode<SearchItem> parent = current_tree.parent;
+				//while parent isNotRoot
+				while (parent != null) {
+					parents.Add(parent);
+					parent = parent.parent;
+				}
+
+				selected_index = 0;
+				scroll_pos = 0.0f;
+				RecalculateSize();
+			}
+		}
+
 		void ExecuteItem(SearchItem item) {
 			if (item is CommandItem) {
 				CommandItem command = (CommandItem)item;
-				Debug.Log((int)command.flag.validation);
-				switch (command.flag.validation) {
+				switch (command.validation) {
 					default:
 					case Validation.None:
 					command.method.Invoke(null, null);
 					break;
 
 					case Validation.searchInput:
-					if (Selection.activeGameObject) {
-						command.method.Invoke(null, new object[] { search });
-					}
+					command.method.Invoke(null, new object[] { search });
 					break;
 
 					case Validation.activeGameObject:
@@ -390,26 +482,16 @@ namespace SearchPRO {
 		void RefreshSearchControl() {
 			if (search != new_search) {
 				if (new_search.IsNullOrEmpty()) {
-					search_items = new List<SearchItem>(all_items);
+					GoToNode(last_tree, false);
 				}
 				else {
-					search_items.Clear();
-					foreach (SearchItem item in all_items) {
-						if (Regex.IsMatch(item.title, Regex.Escape(new_search), RegexOptions.IgnoreCase)
-							|| Regex.IsMatch(item.description, Regex.Escape(new_search), RegexOptions.IgnoreCase)
-							|| (enableTags && item.tags.Any(tag => Regex.IsMatch(tag, Regex.Escape(new_search), RegexOptions.IgnoreCase)))) {
+					TreeNode<SearchItem> search_result = last_tree;
+					search_result = search_result.GetTreeNodeInAllChildren(tn =>
+					Regex.IsMatch(tn.content.text, Regex.Escape(new_search), RegexOptions.IgnoreCase)
+							|| Regex.IsMatch(tn.content.tooltip, Regex.Escape(new_search), RegexOptions.IgnoreCase)
+							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(new_search, Regex.Escape(tag), RegexOptions.IgnoreCase))));
 
-							if (item is CommandItem) {
-								CommandItem command = (CommandItem)item;
-								if (ValidateItem(command)) {
-									search_items.Add(item);
-								}
-							}
-							else {
-								search_items.Add(item);
-							}
-						}
-					}
+					GoToNode(search_result, false);
 				}
 				search = new_search;
 				RecalculateSize();
@@ -417,7 +499,7 @@ namespace SearchPRO {
 		}
 
 		bool ValidateItem(CommandItem command) {
-			switch (command.flag.validation) {
+			switch (command.validation) {
 				default:
 				case Validation.None:
 				return true;
@@ -563,14 +645,14 @@ namespace SearchPRO {
 						current.Use();
 					}
 					else if (current.keyCode == KeyCode.End) {
-						selected_index = search_items.Count - 1;
-						scroll_pos = search_items.Count;
+						selected_index = current_tree.Count - 1;
+						scroll_pos = current_tree.Count;
 						current.Use();
 					}
 					else if (current.keyCode == KeyCode.PageDown) {
 						selected_index += view_element_capacity;
 						scroll_pos += view_element_capacity;
-						if (selected_index >= search_items.Count) {
+						if (selected_index >= current_tree.Count) {
 							selected_index = 0;
 							scroll_pos = 0.0f;
 						}
@@ -580,8 +662,8 @@ namespace SearchPRO {
 						selected_index -= view_element_capacity;
 						scroll_pos -= view_element_capacity;
 						if (selected_index < 0) {
-							selected_index = search_items.Count - 1;
-							scroll_pos = search_items.Count;
+							selected_index = current_tree.Count - 1;
+							scroll_pos = current_tree.Count;
 						}
 						current.Use();
 					}
@@ -590,7 +672,7 @@ namespace SearchPRO {
 						if (selected_index >= scroll_pos + view_element_capacity) {
 							scroll_pos++;
 						}
-						if (selected_index >= search_items.Count) {
+						if (selected_index >= current_tree.Count) {
 							selected_index = 0;
 							scroll_pos = 0.0f;
 						}
@@ -602,13 +684,25 @@ namespace SearchPRO {
 							scroll_pos--;
 						}
 						if (selected_index < 0) {
-							selected_index = search_items.Count - 1;
-							scroll_pos = search_items.Count;
+							selected_index = current_tree.Count - 1;
+							scroll_pos = current_tree.Count;
 						}
 						current.Use();
 					}
+					else if ((current.keyCode == KeyCode.LeftArrow) || (current.keyCode == KeyCode.Backspace)) {
+						if (!hasSearch) {
+							this.GoToParent();
+							current.Use();
+						}
+					}
+					else if (current.keyCode == KeyCode.RightArrow) {
+						if (!hasSearch) {
+							this.GoToNode(selected_node, false);
+							current.Use();
+						}
+					}
 					else if ((current.keyCode == KeyCode.Return) || (current.keyCode == KeyCode.KeypadEnter)) {
-						ExecuteItem(search_items[selected_index]);
+						this.GoToNode(selected_node, true);
 					}
 					//}
 				}
@@ -619,18 +713,18 @@ namespace SearchPRO {
 		void RecalculateSize() {
 			enable_layout = false;
 			float width = 0.0f;
-			foreach (SearchItem item in search_items) {
+			foreach (TreeNode<SearchItem> node in current_tree) {
 				float tags_width = 0.0f;
 				if (enableTags) {
-					foreach (string tag in item.tags) {
+					foreach (string tag in node.tags) {
 						tags_width += GUIUtils.GetTextWidth(tag, styles.tag_button) + 5.0f;
 					}
 				}
-				width = Mathf.Max(width, GUIUtils.GetTextWidth(item.content.text, styles.search_title_item) + 85.0f + tags_width);
+				width = Mathf.Max(width, GUIUtils.GetTextWidth(node.content.text, styles.search_title_item) + 85.0f + tags_width);
 			}
 			width = Mathf.Max(Screen.currentResolution.width / 2.0f, width);
 			Vector2 pos = new Vector2(Screen.currentResolution.width / 2.0f - width / 2.0f, 100.0f);
-			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (search_items.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 150.0f));
+			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (current_tree.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 150.0f));
 
 			position = new Rect(pos, size);
 		}

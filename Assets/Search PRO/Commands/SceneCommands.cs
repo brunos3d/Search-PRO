@@ -8,7 +8,10 @@ using UnityObject = UnityEngine.Object;
 namespace SearchPRO {
 	public static class SceneCommands {
 
-		[Command("Save Scene", "Opens a dialog window to save the current scene.")]
+		[Command]
+		[Category("Scene")]
+		[Title("Save Scene")]
+		[Description("Opens a dialog window to save the current scene.")]
 		public static void CreateCube() {
 			EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
 		}

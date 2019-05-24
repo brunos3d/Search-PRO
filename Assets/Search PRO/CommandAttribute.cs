@@ -17,26 +17,51 @@ namespace SearchPRO {
 	[AttributeUsage(AttributeTargets.Method)]
 	public class CommandAttribute : Attribute {
 
+		public CategoryAttribute category;
+		public TitleAttribute title;
+		public DescriptionAttribute description;
+		public TagsAttribute tags;
+
+		public CommandAttribute() { }
+	}
+
+	[AttributeUsage(AttributeTargets.Method)]
+	public class CategoryAttribute : Attribute {
+
+		public string category;
+
+		public CategoryAttribute(string category) {
+			this.category = category;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Method)]
+	public class TitleAttribute : Attribute {
+
 		public string title;
+
+		public TitleAttribute(string title) {
+			this.title = title;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Method)]
+	public class DescriptionAttribute : Attribute {
 
 		public string description;
 
+		public DescriptionAttribute(string description) {
+			this.description = description;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Method)]
+	public class TagsAttribute : Attribute {
+
 		public string[] tags;
 
-		public Validation validation;
-
-		public CommandAttribute(string title, string description, params string[] tags) {
+		public TagsAttribute(params string[] tags) {
 			this.tags = tags;
-			this.title = title;
-			this.description = description;
-			this.validation = Validation.None;
-		}
-
-		public CommandAttribute(string title, string description, Validation validation, params string[] tags) {
-			this.tags = tags;
-			this.title = title;
-			this.validation = validation;
-			this.description = description;
 		}
 	}
 }
