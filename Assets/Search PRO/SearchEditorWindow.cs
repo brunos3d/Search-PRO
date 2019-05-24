@@ -214,11 +214,41 @@ namespace SearchPRO {
 						}
 
 						if (a_command != null) {
+							Validation validation = Validation.None;
+
+							// Realiza a verificacao dos parametros e se o methodo pode ser chamado
+							foreach (ParameterInfo param in method.GetParameters()) {
+								Type param_type = param.ParameterType;
+
+								// Verifica se o tipo do parametro
+								if (typeof(string).IsAssignableFrom(param_type)) {
+									validation = Validation.searchInput;
+								}
+								else if (typeof(GameObject).IsAssignableFrom(param_type)) {
+									validation = Validation.activeGameObject;
+								}
+								else if (typeof(GameObject[]).IsAssignableFrom(param_type)) {
+									validation = Validation.gameObjects;
+								}
+								else if (typeof(Transform).IsAssignableFrom(param_type)) {
+									validation = Validation.activeTransform;
+								}
+								else if (typeof(Transform[]).IsAssignableFrom(param_type)) {
+									validation = Validation.transforms;
+								}
+								else if (typeof(UnityObject).IsAssignableFrom(param_type)) {
+									validation = Validation.activeObject;
+								}
+								else if (typeof(UnityObject[]).IsAssignableFrom(param_type)) {
+									validation = Validation.objects;
+								}
+							}
+
 							if (a_category == null) {
-								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(a_command, method), tags);
+								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(a_command, method, validation), tags);
 							}
 							else {
-								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(a_command, method), tags);
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(a_command, method, validation), tags);
 							}
 						}
 					}
@@ -487,7 +517,8 @@ namespace SearchPRO {
 				else {
 					TreeNode<SearchItem> search_result = last_tree;
 					search_result = search_result.GetTreeNodeInAllChildren(tn =>
-					Regex.IsMatch(tn.content.text, Regex.Escape(new_search), RegexOptions.IgnoreCase)
+					ValidateItem(tn.data)
+					&& Regex.IsMatch(tn.content.text, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| Regex.IsMatch(tn.content.tooltip, Regex.Escape(new_search), RegexOptions.IgnoreCase)
 							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(new_search, Regex.Escape(tag), RegexOptions.IgnoreCase))));
 
@@ -498,48 +529,52 @@ namespace SearchPRO {
 			}
 		}
 
-		bool ValidateItem(CommandItem command) {
-			switch (command.validation) {
-				default:
-				case Validation.None:
-				return true;
-
-				case Validation.activeGameObject:
-				if (Selection.activeGameObject) {
+		bool ValidateItem(SearchItem item) {
+			if (item is CommandItem) {
+				CommandItem command = (CommandItem)item;
+				switch (command.validation) {
+					default:
+					case Validation.None:
 					return true;
-				}
-				return false;
 
-				case Validation.gameObjects:
-				if (Selection.gameObjects.Length > 0) {
-					return true;
-				}
-				return false;
+					case Validation.activeGameObject:
+					if (Selection.activeGameObject) {
+						return true;
+					}
+					return false;
 
-				case Validation.activeTransform:
-				if (Selection.activeTransform) {
-					return true;
-				}
-				return false;
+					case Validation.gameObjects:
+					if (Selection.gameObjects.Length > 0) {
+						return true;
+					}
+					return false;
 
-				case Validation.transforms:
-				if (Selection.transforms.Length > 0) {
-					return true;
-				}
-				return false;
+					case Validation.activeTransform:
+					if (Selection.activeTransform) {
+						return true;
+					}
+					return false;
 
-				case Validation.activeObject:
-				if (Selection.activeObject) {
-					return true;
-				}
-				return false;
+					case Validation.transforms:
+					if (Selection.transforms.Length > 0) {
+						return true;
+					}
+					return false;
 
-				case Validation.objects:
-				if (Selection.objects.Length > 0) {
-					return true;
+					case Validation.activeObject:
+					if (Selection.activeObject) {
+						return true;
+					}
+					return false;
+
+					case Validation.objects:
+					if (Selection.objects.Length > 0) {
+						return true;
+					}
+					return false;
 				}
-				return false;
 			}
+			return true;
 		}
 
 		public string HighlightText(string text, string format) {
