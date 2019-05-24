@@ -20,6 +20,8 @@ namespace SearchPRO {
 
 			public readonly GUIStyle label = EditorStyles.label;
 
+			public readonly GUIStyle scroll_shadow;
+
 			public readonly GUIStyle tag_button;
 
 			public readonly GUIStyle search_bar;
@@ -38,6 +40,8 @@ namespace SearchPRO {
 
 			public Styles() {
 				search_icon = EditorGUIUtility.FindTexture("Search Icon");
+
+				scroll_shadow = GlobalSkin.scrollShadow;
 
 				tag_button = new GUIStyle(EditorStyles.miniButton);
 				tag_button.richText = true;
@@ -274,9 +278,9 @@ namespace SearchPRO {
 
 			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.window_background);
 
-			EditorGUI.DrawRect(new Rect(0.0f, 0.0f, base.position.width, WINDOW_HEAD_HEIGHT), WINDOW_HEAD_COLOR);
+			EditorGUI.DrawRect(new Rect(1.0f, 1.0f, base.position.width - 2.0f, WINDOW_HEAD_HEIGHT - 1.0f), WINDOW_HEAD_COLOR);
 
-			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET)) / element_list_height);
+			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + (WINDOW_FOOT_OFFSET * 2))) / element_list_height);
 
 			KeyboardInputGUI();
 			RefreshSearchControl();
@@ -326,8 +330,10 @@ namespace SearchPRO {
 
 			enable_scroll = view_element_capacity < current_tree_count;
 
+			Rect list_area = new Rect(1.0f, WINDOW_HEAD_HEIGHT, position.width - (enable_scroll ? 19.0f : 2.0f), position.height - (WINDOW_HEAD_HEIGHT + WINDOW_FOOT_OFFSET));
+
 			if (enable_scroll) {
-				scroll_pos = GUI.VerticalScrollbar(new Rect(position.width - 17.0f, WINDOW_HEAD_HEIGHT, 20.0f, view_element_capacity * element_list_height), scroll_pos, 1.0f, 0.0f, current_tree_count - view_element_capacity + 1);
+				scroll_pos = GUI.VerticalScrollbar(new Rect(position.width - 17.0f, WINDOW_HEAD_HEIGHT, 20.0f, list_area.height), scroll_pos, 1.0f, 0.0f, current_tree_count - view_element_capacity + 1);
 			}
 			else {
 				scroll_pos = 0.0f;
@@ -340,26 +346,27 @@ namespace SearchPRO {
 
 			sliderValue = Mathf.Round(GUI.HorizontalSlider(new Rect(position.width - 60.0f, 40.0f, 50.0f, 20.0f), sliderValue, 25, 50) / 5) * 5;
 
+			GUI.BeginClip(list_area);
+
 			PreInputGUI();
 
 			int first_scroll_index = (int)Mathf.Clamp(scroll_pos, 0, current_tree_count);
-			int last_scroll_index = (int)Mathf.Clamp(scroll_pos + view_element_capacity, 0, current_tree_count);
+			int last_scroll_index = (int)Mathf.Clamp(scroll_pos + view_element_capacity + 2, 0, current_tree_count);
 
 			int draw_index = 0;
 			for (int id = first_scroll_index; id < last_scroll_index; id++) {
 				bool selected = false;
 
 				TreeNode<SearchItem> node = current_tree[id];
-				Rect layout_rect = new Rect(1.0f, WINDOW_HEAD_HEIGHT + draw_index * element_list_height, position.width - (enable_scroll ? 19.0f : 2.0f), element_list_height);
+				float smooth_offset = (scroll_pos - id) * element_list_height;
 
+				Rect layout_rect = new Rect(0.0f, draw_index - smooth_offset, list_area.width, element_list_height);
 				if (id % 2 == 1) {
-					Rect strip_rect = new Rect(1.0f, WINDOW_HEAD_HEIGHT + draw_index * element_list_height, position.width - (enable_scroll ? 19.0f : 2.0f), element_list_height);
-
 					if (EditorGUIUtility.isProSkin) {
-						EditorGUI.DrawRect(strip_rect, STRIP_COLOR_DARK);
+						EditorGUI.DrawRect(layout_rect, STRIP_COLOR_DARK);
 					}
 					else {
-						EditorGUI.DrawRect(strip_rect, STRIP_COLOR_LIGHT);
+						EditorGUI.DrawRect(layout_rect, STRIP_COLOR_LIGHT);
 					}
 				}
 
@@ -396,6 +403,17 @@ namespace SearchPRO {
 				draw_index++;
 			}
 			PostInputGUI();
+
+			GUI.EndClip();
+
+			if (enable_scroll && scroll_pos != 0.0f) {
+				Color gui_color = GUI.color;
+				if (scroll_pos < 1.0f) {
+					GUI.color = new Color(gui_color.r, gui_color.g, gui_color.b, gui_color.a * scroll_pos);
+				}
+				GUI.Box(new Rect(0.0f, WINDOW_HEAD_HEIGHT, position.width - 15.0f, 10.0f), GUIContent.none, styles.scroll_shadow);
+				GUI.color = gui_color;
+			}
 
 			if (Event.current.type == EventType.Repaint) {
 				enable_layout = true;
@@ -759,7 +777,7 @@ namespace SearchPRO {
 			}
 			width = Mathf.Max(Screen.currentResolution.width / 2.0f, width);
 			Vector2 pos = new Vector2(Screen.currentResolution.width / 2.0f - width / 2.0f, 100.0f);
-			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (current_tree.Count * element_list_height) + WINDOW_FOOT_OFFSET, Screen.currentResolution.height - 150.0f));
+			Vector2 size = new Vector2(width, Mathf.Min(WINDOW_HEAD_HEIGHT + (current_tree.Count * element_list_height) + (WINDOW_FOOT_OFFSET * 2.0f), Screen.currentResolution.height - pos.y - 150.0f));
 
 			position = new Rect(pos, size);
 		}

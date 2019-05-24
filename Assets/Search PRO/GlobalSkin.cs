@@ -15,6 +15,12 @@ namespace SearchPRO {
 			}
 		}
 
+		public static GUIStyle scrollShadow {
+			get {
+				return GetStyle("Scroll Shadow");
+			} 
+		}
+
 		public static GUIStyle searchBar {
 			get {
 				return GetStyle("Search Bar");
