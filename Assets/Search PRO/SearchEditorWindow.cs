@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEditor.SceneManagement;
 
 namespace SearchPRO {
 	public class SearchEditorWindow : EditorWindow {
