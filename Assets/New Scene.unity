@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 429255114}
   - component: {fileID: 429255113}
   m_Layer: 0
-  m_Name: Sphere
+  m_Name: hello (0)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -430,7 +430,7 @@ GameObject:
   - component: {fileID: 1275911312}
   - component: {fileID: 1275911311}
   m_Layer: 0
-  m_Name: Capsule
+  m_Name: hello (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -613,7 +613,7 @@ GameObject:
   - component: {fileID: 1387637621}
   - component: {fileID: 1387637620}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: hello (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -795,7 +795,7 @@ GameObject:
   - component: {fileID: 1910472585}
   - component: {fileID: 1910472584}
   m_Layer: 0
-  m_Name: Capsule
+  m_Name: hello (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

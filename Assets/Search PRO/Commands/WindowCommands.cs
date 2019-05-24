@@ -10,31 +10,48 @@ namespace SearchPRO {
 
 		[Command]
 		[Category("Open Window")]
+		[Title("Open SceneView")]
+		[Description("Open the SceneView window.")]
+		[Tags("OSV")]
+		public static void OpenSceneView() {
+			EditorApplication.ExecuteMenuItem("Window/General/Scene");
+		}
+
+		[Command]
+		[Category("Open Window")]
 		[Title("Open GameView")]
-		[Description("Open a new GameView window.")]
+		[Description("Open the GameView window.")]
 		[Tags("OGV")]
 		public static void OpenGameView() {
-			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.GameView"));
-			editor.Show();
+			EditorApplication.ExecuteMenuItem("Window/General/Game");
 		}
 
 		[Command]
 		[Category("Open Window")]
 		[Title("Open ProjectBrowser")]
-		[Description("Open a new ProjectBrowser window.")]
+		[Description("Open the ProjectBrowser window.")]
 		[Tags("OPB")]
 		public static void OpenProjectBrowser() {
-			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.ProjectBrowser"));
-			editor.Show();
+			EditorApplication.ExecuteMenuItem("Window/General/Project");
 		}
 
 		[Command]
 		[Category("Open Window")]
 		[Title("Open ConsoleWindow")]
-		[Description("Open a new ConsoleWindow window.")]
+		[Description("Open the Console window.")]
 		[Tags("OCW")]
 		public static void OpenConsoleWindow() {
 			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.ConsoleWindow"));
+			editor.Show();
+		}
+
+		[Command]
+		[Category("Open Window")]
+		[Title("Open AssetStore")]
+		[Description("Open the AssetStore window.")]
+		[Tags("OAS")]
+		public static void OpenAssetStore() {
+			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.AssetStoreWindow"));
 			editor.Show();
 		}
 	}

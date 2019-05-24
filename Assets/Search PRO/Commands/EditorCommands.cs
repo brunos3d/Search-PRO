@@ -11,31 +11,39 @@ namespace SearchPRO {
 		[Command]
 		[Category("Editor")]
 		[Title("Play")]
-		[Description("Open a new GameView window.")]
-		[Tags("OGV")]
-		public static void OpenGameView() {
-			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.GameView"));
-			editor.Show();
+		[Description("Enter in playmode.")]
+		[Tags("EAP")]
+		public static void Play() {
+			EditorApplication.ExecuteMenuItem("Edit/Play");
 		}
 
 		[Command]
-		[Category("Open Window")]
-		[Title("Open ProjectBrowser")]
-		[Description("Open a new ProjectBrowser window.")]
-		[Tags("OPB")]
-		public static void OpenProjectBrowser() {
-			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.ProjectBrowser"));
-			editor.Show();
+		[Category("Editor")]
+		[Title("Stop")]
+		[Description("Stops playmode.")]
+		[Tags("EAS")]
+		public static void Stop() {
+			if (EditorApplication.isPlaying) {
+				EditorApplication.ExecuteMenuItem("Edit/Play");
+			}
 		}
 
 		[Command]
-		[Category("Open Window")]
-		[Title("Open ConsoleWindow")]
-		[Description("Open a new ConsoleWindow window.")]
-		[Tags("OCW")]
-		public static void OpenConsoleWindow() {
-			EditorWindow editor = (EditorWindow)EditorWindow.CreateInstance(typeof(Editor).Assembly.GetType("UnityEditor.ConsoleWindow"));
-			editor.Show();
+		[Category("Editor")]
+		[Title("Pause")]
+		[Description("Pause current game.")]
+		[Tags("EAU")]
+		public static void Pause() {
+			EditorApplication.ExecuteMenuItem("Edit/Pause");
+		}
+
+		[Command]
+		[Category("Editor")]
+		[Title("Step")]
+		[Description("Step to the next frame.")]
+		[Tags("EAT")]
+		public static void Step() {
+			EditorApplication.ExecuteMenuItem("Edit/Step");
 		}
 	}
 }
