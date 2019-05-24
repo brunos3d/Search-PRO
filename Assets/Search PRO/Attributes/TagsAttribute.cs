@@ -2,7 +2,7 @@
 using System;
 
 namespace SearchPRO {
-	[AttributeUsage(AttributeTargets.Method)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 	public class TagsAttribute : Attribute {
 
 		public string[] tags;

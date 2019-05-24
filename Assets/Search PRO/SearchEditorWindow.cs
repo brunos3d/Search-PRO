@@ -156,25 +156,87 @@ namespace SearchPRO {
 			if (!enable_already) {
 				//Unity bug fix
 				Undo.undoRedoPerformed += Close;
+
 				if (styles == null) {
 					styles = new Styles();
 				}
 
-				need_refocus = true;
 				element_list_height = sliderValue;
-
 				root_tree = new TreeNode<SearchItem>(new GUIContent("Home"), null);
 
 				// Pega todos os types na assembly atual
 				foreach (Type type in ReflectionUtils.GetTypesFrom(GetType().Assembly)) {
+					// Verifica a existencia da interface
+					if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
+						SearchInterfaceAttribute t_interface = null;
+						CategoryAttribute t_category = null;
+						TitleAttribute t_title = null;
+						DescriptionAttribute t_description = null;
+						TagsAttribute t_tags = null;
+
+						string category = string.Empty;
+						string title = string.Empty;
+						string description = string.Empty;
+						string[] tags = new string[] { };
+
+						// Verifica a existencia dos attributos
+						foreach (Attribute attribute in type.GetCustomAttributes()) {
+							if (t_interface == null) {
+								if (attribute is SearchInterfaceAttribute) {
+									t_interface = (SearchInterfaceAttribute)attribute;
+									continue;
+								}
+							}
+							else {
+								if (t_category == null && attribute is CategoryAttribute) {
+									t_category = (CategoryAttribute)attribute;
+									t_interface.category = t_category;
+									category = t_category.category;
+									continue;
+								}
+								if (t_title == null && attribute is TitleAttribute) {
+									t_title = (TitleAttribute)attribute;
+									t_interface.title = t_title;
+									title = t_title.title;
+									continue;
+								}
+								if (t_description == null && attribute is DescriptionAttribute) {
+									t_description = (DescriptionAttribute)attribute;
+									t_interface.description = t_description;
+									description = t_description.description;
+									continue;
+								}
+								if (t_tags == null && attribute is TagsAttribute) {
+									t_tags = (TagsAttribute)attribute;
+									t_interface.tags = t_tags;
+									tags = t_tags.tags;
+									continue;
+								}
+							}
+						}
+
+						// Cria o item
+						if (t_interface != null) {
+							ISearchInterface si = (ISearchInterface)Activator.CreateInstance(type);
+							if (t_category == null) {
+								root_tree.AddChildByPath(new GUIContent(title, description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
+							}
+							else {
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
+							}
+						}
+
+						continue;
+					}
+
 					// Pega todos os methods do type atual
 					foreach (MethodInfo method in type.GetMethodsFrom()) {
 						// Pega e verifica a existencia do attributo
-						CommandAttribute a_command = null;
-						CategoryAttribute a_category = null;
-						TitleAttribute a_title = null;
-						DescriptionAttribute a_description = null;
-						TagsAttribute a_tags = null;
+						CommandAttribute m_command = null;
+						CategoryAttribute m_category = null;
+						TitleAttribute m_title = null;
+						DescriptionAttribute m_description = null;
+						TagsAttribute m_tags = null;
 
 						string category = string.Empty;
 						string title = string.Empty;
@@ -182,41 +244,41 @@ namespace SearchPRO {
 						string[] tags = new string[] { };
 
 						foreach (Attribute attribute in method.GetCustomAttributes()) {
-							if (a_command == null) {
+							if (m_command == null) {
 								if (attribute is CommandAttribute) {
-									a_command = (CommandAttribute)attribute;
+									m_command = (CommandAttribute)attribute;
 									continue;
 								}
 							}
 							else {
-								if (a_category == null && attribute is CategoryAttribute) {
-									a_category = (CategoryAttribute)attribute;
-									a_command.category = a_category;
-									category = a_category.category;
+								if (m_category == null && attribute is CategoryAttribute) {
+									m_category = (CategoryAttribute)attribute;
+									m_command.category = m_category;
+									category = m_category.category;
 									continue;
 								}
-								if (a_title == null && attribute is TitleAttribute) {
-									a_title = (TitleAttribute)attribute;
-									a_command.title = a_title;
-									title = a_title.title;
+								if (m_title == null && attribute is TitleAttribute) {
+									m_title = (TitleAttribute)attribute;
+									m_command.title = m_title;
+									title = m_title.title;
 									continue;
 								}
-								if (a_description == null && attribute is DescriptionAttribute) {
-									a_description = (DescriptionAttribute)attribute;
-									a_command.description = a_description;
-									description = a_description.description;
+								if (m_description == null && attribute is DescriptionAttribute) {
+									m_description = (DescriptionAttribute)attribute;
+									m_command.description = m_description;
+									description = m_description.description;
 									continue;
 								}
-								if (a_tags == null && attribute is TagsAttribute) {
-									a_tags = (TagsAttribute)attribute;
-									a_command.tags = a_tags;
-									tags = a_tags.tags;
+								if (m_tags == null && attribute is TagsAttribute) {
+									m_tags = (TagsAttribute)attribute;
+									m_command.tags = m_tags;
+									tags = m_tags.tags;
 									continue;
 								}
 							}
 						}
 
-						if (a_command != null) {
+						if (m_command != null) {
 							Validation validation = Validation.None;
 
 							// Realiza a verificacao dos parametros e se o methodo pode ser chamado
@@ -247,17 +309,22 @@ namespace SearchPRO {
 								}
 							}
 
-							if (a_category == null) {
-								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(a_command, method, validation), tags);
+							if (m_category == null) {
+								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(m_command, method, validation), tags);
 							}
 							else {
-								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(a_command, method, validation), tags);
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(m_command, method, validation), tags);
 							}
 						}
 					}
 				}
 
-				GoToHome();
+				if (Selection.activeObject) {
+					GoToNode(root_tree.GetTreeNodeInAllChildren(tn => tn.isLeaf && ValidateItem(tn.data)), false);
+				}
+				else {
+					GoToHome();
+				}
 				enable_already = true;
 			}
 		}
@@ -308,7 +375,7 @@ namespace SearchPRO {
 
 				GUILayout.BeginHorizontal();
 				{
-					if (hasSearch && current_tree.content.text == "#Search") {
+					if (current_tree.content.text == "#Search") {
 						if (GUILayout.Button(new GUIContent("Home"), GUILayout.ExpandWidth(false), GUILayout.Height(20.0f))) {
 							GoToHome();
 						}
@@ -422,9 +489,6 @@ namespace SearchPRO {
 
 		void GoToHome() {
 			GoToNode(root_tree, false);
-			new_search = string.Empty;
-			GUI.FocusControl("GUIControlSearchBoxTextField");
-			need_refocus = true;
 		}
 
 		void GoToParent() {
@@ -436,10 +500,22 @@ namespace SearchPRO {
 		void GoToNode(TreeNode<SearchItem> node, bool call_if_is_leaf) {
 			if (node == null) return;
 			enable_layout = false;
+			new_search = string.Empty;
+			need_refocus = true;
 
 			if (node.isLeaf) {
 				if (call_if_is_leaf) {
-					ExecuteItem(node.data);
+					if (node.data is CommandItem) {
+						CommandItem command = (CommandItem)node.data;
+						ExecuteCommandItem(command);
+					}
+					else if (node.data is InterfaceItem) {
+						InterfaceItem interface_item = (InterfaceItem)node.data;
+						ContainerWindow.CreateNew((ISearchInterface)interface_item.search_interface, node.content, interface_item.close_on_lost_focus);
+					}
+					else {
+						Selection.activeObject = EditorUtility.InstanceIDToObject((int)node.data.data);
+					}
 					this.Close();
 				}
 				else {
@@ -470,58 +546,52 @@ namespace SearchPRO {
 			}
 		}
 
-		void ExecuteItem(SearchItem item) {
-			if (item is CommandItem) {
-				CommandItem command = (CommandItem)item;
-				switch (command.validation) {
-					default:
-					case Validation.None:
-					command.method.Invoke(null, null);
-					break;
+		void ExecuteCommandItem(CommandItem command) {
+			switch (command.validation) {
+				default:
+				case Validation.None:
+				command.method.Invoke(null, null);
+				break;
 
-					case Validation.searchInput:
-					command.method.Invoke(null, new object[] { search });
-					break;
+				case Validation.searchInput:
+				command.method.Invoke(null, new object[] { search });
+				break;
 
-					case Validation.activeGameObject:
-					if (Selection.activeGameObject) {
-						command.method.Invoke(null, new object[] { Selection.activeGameObject });
-					}
-					break;
-
-					case Validation.gameObjects:
-					if (Selection.gameObjects.Length > 0) {
-						command.method.Invoke(null, new object[] { Selection.gameObjects });
-					}
-					break;
-
-					case Validation.activeTransform:
-					if (Selection.activeTransform) {
-						command.method.Invoke(null, new object[] { Selection.activeTransform });
-					}
-					break;
-
-					case Validation.transforms:
-					if (Selection.transforms.Length > 0) {
-						command.method.Invoke(null, new object[] { Selection.transforms });
-					}
-					break;
-
-					case Validation.activeObject:
-					if (Selection.activeObject) {
-						command.method.Invoke(null, new object[] { Selection.activeGameObject });
-					}
-					break;
-
-					case Validation.objects:
-					if (Selection.objects.Length > 0) {
-						command.method.Invoke(null, new object[] { Selection.objects });
-					}
-					break;
+				case Validation.activeGameObject:
+				if (Selection.activeGameObject) {
+					command.method.Invoke(null, new object[] { Selection.activeGameObject });
 				}
-			}
-			else {
-				Selection.activeObject = EditorUtility.InstanceIDToObject((int)item.data);
+				break;
+
+				case Validation.gameObjects:
+				if (Selection.gameObjects.Length > 0) {
+					command.method.Invoke(null, new object[] { Selection.gameObjects });
+				}
+				break;
+
+				case Validation.activeTransform:
+				if (Selection.activeTransform) {
+					command.method.Invoke(null, new object[] { Selection.activeTransform });
+				}
+				break;
+
+				case Validation.transforms:
+				if (Selection.transforms.Length > 0) {
+					command.method.Invoke(null, new object[] { Selection.transforms });
+				}
+				break;
+
+				case Validation.activeObject:
+				if (Selection.activeObject) {
+					command.method.Invoke(null, new object[] { Selection.activeGameObject });
+				}
+				break;
+
+				case Validation.objects:
+				if (Selection.objects.Length > 0) {
+					command.method.Invoke(null, new object[] { Selection.objects });
+				}
+				break;
 			}
 			Close();
 		}
@@ -542,7 +612,6 @@ namespace SearchPRO {
 					GoToNode(search_result, false);
 				}
 				search = new_search;
-				RecalculateSize();
 			}
 		}
 

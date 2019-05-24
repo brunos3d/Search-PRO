@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 
 namespace SearchPRO {
-	public interface SearchInterface {
+	public interface ISearchInterface {
 
 		void OnEnable();
 

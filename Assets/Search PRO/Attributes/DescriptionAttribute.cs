@@ -2,7 +2,7 @@
 using System;
 
 namespace SearchPRO {
-	[AttributeUsage(AttributeTargets.Method)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 	public class DescriptionAttribute : Attribute {
 
 		public string description;

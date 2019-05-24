@@ -2,10 +2,13 @@
 namespace SearchPRO {
 	public class InterfaceItem : SearchItem {
 
-		public SearchInterface search_interface;
+		public bool close_on_lost_focus;
 
-		public InterfaceItem(SearchInterface search_interface) {
+		public ISearchInterface search_interface;
+
+		public InterfaceItem(ISearchInterface search_interface, bool close_on_lost_focus) {
 			this.search_interface = search_interface;
+			this.close_on_lost_focus = close_on_lost_focus;
 		}
 	}
 }

@@ -12,7 +12,7 @@ namespace SearchPRO {
 		[Category("Editor")]
 		[Title("Play")]
 		[Description("Enter in playmode.")]
-		[Tags("EAP")]
+		[Tags("EAP", "Playmode")]
 		public static void Play() {
 			EditorApplication.ExecuteMenuItem("Edit/Play");
 		}
@@ -21,7 +21,7 @@ namespace SearchPRO {
 		[Category("Editor")]
 		[Title("Stop")]
 		[Description("Stops playmode.")]
-		[Tags("EAS")]
+		[Tags("EAS", "Playmode")]
 		public static void Stop() {
 			if (EditorApplication.isPlaying) {
 				EditorApplication.ExecuteMenuItem("Edit/Play");
@@ -32,7 +32,7 @@ namespace SearchPRO {
 		[Category("Editor")]
 		[Title("Pause")]
 		[Description("Pause current game.")]
-		[Tags("EAU")]
+		[Tags("EAU", "Playmode")]
 		public static void Pause() {
 			EditorApplication.ExecuteMenuItem("Edit/Pause");
 		}
@@ -41,7 +41,7 @@ namespace SearchPRO {
 		[Category("Editor")]
 		[Title("Step")]
 		[Description("Step to the next frame.")]
-		[Tags("EAT")]
+		[Tags("EAT", "Playmode", "Next")]
 		public static void Step() {
 			EditorApplication.ExecuteMenuItem("Edit/Step");
 		}
