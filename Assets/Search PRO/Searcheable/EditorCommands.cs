@@ -10,6 +10,15 @@ namespace SearchPRO {
 
 		[Command]
 		[Category("Editor")]
+		[Title("Exit")]
+		[Description("Close the Unity Program.")]
+		[Tags("QUIT", "Exit")]
+		public static void Exit() {
+			EditorApplication.ExecuteMenuItem("File/Exit");
+		}
+
+		[Command]
+		[Category("Editor")]
 		[Title("Play")]
 		[Description("Enter in playmode.")]
 		[Tags("EAP", "Playmode")]

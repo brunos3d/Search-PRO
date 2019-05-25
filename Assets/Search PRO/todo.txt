@@ -1,12 +1,12 @@
-search assets
+Y search assets
 
-search gameobjects
+Y search gameobjects
 
-search settings
+N search settings
 
-search types to add in component
+Y search types to add in component
 
-search commands
+Y search commands
 
 
 
