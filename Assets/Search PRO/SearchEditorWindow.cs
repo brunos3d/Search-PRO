@@ -576,6 +576,7 @@ namespace SearchPRO {
 					else if (node.data is ObjectItem) {
 						ObjectItem object_item = (ObjectItem)node.data;
 						EditorGUIUtility.PingObject(object_item.obj);
+						Selection.activeObject = object_item.obj;
 					}
 					else if (node.data is InterfaceItem) {
 						InterfaceItem interface_item = (InterfaceItem)node.data;
