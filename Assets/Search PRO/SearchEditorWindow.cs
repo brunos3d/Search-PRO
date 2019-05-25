@@ -177,7 +177,8 @@ namespace SearchPRO {
 					if (type.IsSubclassOf(typeof(Component))) {
 						ComponentItem component = new ComponentItem(type);
 						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
-						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
+						Texture icon = EditorGUIUtility.ObjectContent(null, type).image;
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, icon, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
 					}
 				}
 				// Pega todos os types na assembly Physics
@@ -186,7 +187,8 @@ namespace SearchPRO {
 					if (type.IsSubclassOf(typeof(Component))) {
 						ComponentItem component = new ComponentItem(type);
 						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
-						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
+						Texture icon = EditorGUIUtility.ObjectContent(null, type).image;
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, icon, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
 					}
 				}
 
@@ -196,7 +198,8 @@ namespace SearchPRO {
 					if (type.IsSubclassOf(typeof(Component))) {
 						ComponentItem component = new ComponentItem(type);
 						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
-						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
+						Texture icon = EditorGUIUtility.ObjectContent(null, type).image;
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, icon, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
 					}
 					// Verifica a existencia da interface
 					else if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
@@ -649,6 +652,13 @@ namespace SearchPRO {
 				else {
 					string new_search_escape = Regex.Escape(new_search);
 					TreeNode<SearchItem> search_result = new TreeNode<SearchItem>(new GUIContent("#Search"));
+
+					foreach (GameObject go in Resources.FindObjectsOfTypeAll<GameObject>().Where(go => go.activeInHierarchy && go.hideFlags != HideFlags.NotEditable && go.hideFlags != HideFlags.HideAndDontSave)) {
+						ObjectItem item = new ObjectItem(go);
+						Texture icon = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image;
+						GUIContent content = new GUIContent(go.name, icon, go.scene.name + "/" + go.name);
+						search_result.AddChild(content, item);
+					}
 
 					foreach (string path in AssetDatabase.GetAllAssetPaths()) {
 						// Ignore built-in packages
