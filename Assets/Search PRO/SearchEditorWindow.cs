@@ -171,12 +171,22 @@ namespace SearchPRO {
 				element_list_height = sliderValue;
 				root_tree = new TreeNode<SearchItem>(new GUIContent("Home"), null);
 
-				// Pega todos os types na assembly UnityEngine
+				// Pega todos os types na assembly Physics
 				foreach (Type type in ReflectionUtils.GetTypesFrom(typeof(UnityObject).Assembly)) {
 					// Verifica se eh uma sub-classe do tipo Component
 					if (type.IsSubclassOf(typeof(Component))) {
 						ComponentItem component = new ComponentItem(type);
-						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component);
+						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
+					}
+				}
+				// Pega todos os types na assembly Physics
+				foreach (Type type in ReflectionUtils.GetTypesFrom(typeof(Rigidbody).Assembly)) {
+					// Verifica se eh uma sub-classe do tipo Component
+					if (type.IsSubclassOf(typeof(Component))) {
+						ComponentItem component = new ComponentItem(type);
+						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
 					}
 				}
 
@@ -185,7 +195,8 @@ namespace SearchPRO {
 					// Verifica se eh uma sub-classe do tipo Component
 					if (type.IsSubclassOf(typeof(Component))) {
 						ComponentItem component = new ComponentItem(type);
-						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component);
+						string tag = "A" + Char.ToUpper(type.Name[0]) + Char.ToUpper(type.Name[type.Name.Length - 1]);
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component, tag);
 					}
 					// Verifica a existencia da interface
 					else if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
