@@ -171,10 +171,24 @@ namespace SearchPRO {
 				element_list_height = sliderValue;
 				root_tree = new TreeNode<SearchItem>(new GUIContent("Home"), null);
 
+				// Pega todos os types na assembly UnityEngine
+				foreach (Type type in ReflectionUtils.GetTypesFrom(typeof(UnityObject).Assembly)) {
+					// Verifica se eh uma sub-classe do tipo Component
+					if (type.IsSubclassOf(typeof(Component))) {
+						ComponentItem component = new ComponentItem(type);
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component);
+					}
+				}
+
 				// Pega todos os types na assembly atual
 				foreach (Type type in ReflectionUtils.GetTypesFrom(GetType().Assembly)) {
+					// Verifica se eh uma sub-classe do tipo Component
+					if (type.IsSubclassOf(typeof(Component))) {
+						ComponentItem component = new ComponentItem(type);
+						root_tree.AddChildByPath(new GUIContent("Add Component/Add " + type.Name, "Add Component " + type.FullName + " to selected GameObject(s)"), component);
+					}
 					// Verifica a existencia da interface
-					if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
+					else if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
 						SearchInterfaceAttribute t_interface = null;
 						CategoryAttribute t_category = null;
 						TitleAttribute t_title = null;
@@ -326,12 +340,7 @@ namespace SearchPRO {
 					}
 				}
 
-				if (Selection.activeObject) {
-					GoToNode(root_tree.GetTreeNodeInAllChildren(tn => tn.isLeaf && ValidateItem(tn.data)), false);
-				}
-				else {
-					GoToHome();
-				}
+				GoToHome();
 				enable_already = true;
 			}
 		}
@@ -341,10 +350,13 @@ namespace SearchPRO {
 			Undo.undoRedoPerformed -= Close;
 		}
 
-		void OnGUI() {
+		void OnInspectorUpdate() {
 			if ((!(drag_item && DragAndDrop.objectReferences.Length > 0) && focusedWindow != this) || EditorApplication.isCompiling) {
-				Close();
+				this.Close();
 			}
+		}
+
+		void OnGUI() {
 			if (!enable_already) {
 				OnEnable();
 			}
@@ -523,13 +535,21 @@ namespace SearchPRO {
 						CommandItem command = (CommandItem)node.data;
 						ExecuteCommandItem(command);
 					}
-					else if (node.data is InterfaceItem) {
-						InterfaceItem interface_item = (InterfaceItem)node.data;
-						ContainerWindow.CreateNew((ISearchInterface)interface_item.search_interface, node.content, interface_item.close_on_lost_focus);
+					if (node.data is ComponentItem) {
+						ComponentItem component = (ComponentItem)node.data;
+						foreach (GameObject go in Selection.gameObjects) {
+							if (go.activeInHierarchy && go.hideFlags != HideFlags.NotEditable) {
+								Undo.AddComponent(go, component.type);
+							}
+						}
 					}
 					else if (node.data is ObjectItem) {
 						ObjectItem object_item = (ObjectItem)node.data;
 						EditorGUIUtility.PingObject(object_item.obj);
+					}
+					else if (node.data is InterfaceItem) {
+						InterfaceItem interface_item = (InterfaceItem)node.data;
+						ContainerWindow.CreateNew((ISearchInterface)interface_item.search_interface, node.content, interface_item.close_on_lost_focus);
 					}
 					else {
 						Debug.Log("No implemented function");
@@ -608,7 +628,6 @@ namespace SearchPRO {
 				}
 				break;
 			}
-			Close();
 		}
 
 		void RefreshSearchControl() {
@@ -621,13 +640,23 @@ namespace SearchPRO {
 					TreeNode<SearchItem> search_result = new TreeNode<SearchItem>(new GUIContent("#Search"));
 
 					foreach (string path in AssetDatabase.GetAllAssetPaths()) {
+						// Ignore built-in packages
 						if (path.StartsWith("Packages/")) continue;
 
 						if (Regex.IsMatch(path, new_search_escape, RegexOptions.IgnoreCase)) {
 							UnityObject obj = AssetDatabase.LoadAssetAtPath<UnityObject>(path);
 							ObjectItem item = new ObjectItem(obj);
 							Texture icon = AssetPreview.GetAssetPreview(obj) ?? AssetDatabase.GetCachedIcon(path) ?? AssetPreview.GetMiniThumbnail(obj);
-							GUIContent content = new GUIContent(obj.name, icon, path);
+
+							GUIContent content;
+							if (AssetDatabase.IsValidFolder(path)) {
+								content = new GUIContent(obj.name, icon, path);
+							}
+							else {
+								long file_size = new FileInfo(path.Replace(Application.dataPath, "Assets").Replace("\\", "/")).Length;
+								string description = string.Format("{0} ({1})", path, EditorUtility.FormatBytes(file_size));
+								content = new GUIContent(obj.name, icon, description);
+							}
 							search_result.AddChild(content, item);
 						}
 					}
