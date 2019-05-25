@@ -19,7 +19,11 @@ namespace SearchPRO {
 
 		public Dictionary<string, TreeNode<T>> children;
 
-		public bool isSearch { get; private set; }
+		public bool isSearch {
+			get {
+				return content.text == "#Search";
+			}
+		}
 
 		public bool isRoot {
 			get { return parent == null; }
@@ -151,7 +155,6 @@ namespace SearchPRO {
 			foreach (TreeNode<T> child in this.children.Values) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
-			result_tree.isSearch = true;
 			return result_tree;
 		}
 
@@ -160,7 +163,6 @@ namespace SearchPRO {
 			foreach (TreeNode<T> child in this.children_index) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
-			result_tree.isSearch = true;
 			return result_tree;
 		}
 
@@ -169,7 +171,6 @@ namespace SearchPRO {
 			foreach (TreeNode<T> child in this.children.Values.Where(predicate)) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
-			result_tree.isSearch = true;
 			return result_tree;
 		}
 
@@ -178,7 +179,6 @@ namespace SearchPRO {
 			foreach (TreeNode<T> child in this.children_index.Where(predicate)) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
-			result_tree.isSearch = true;
 			return result_tree;
 		}
 	}

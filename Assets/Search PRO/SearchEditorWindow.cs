@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace SearchPRO {
 	public class SearchEditorWindow : EditorWindow {
@@ -74,13 +75,15 @@ namespace SearchPRO {
 
 		private const string PREFS_ELEMENT_SIZE_SLIDER = "SearchPRO: SEW ElementSize Slider";
 
-		private readonly Color FOCUS_COLOR = new Color(62.0f / 255.0f, 125.0f / 255.0f, 231.0f / 255.0f);
+		private readonly Color FOCUS_COLOR = new Color32(62, 125, 231, 255);
 
-		private readonly Color STRIP_COLOR_DARK = new Color(0.205f, 0.205f, 0.205f);
+		private readonly Color STRIP_COLOR_DARK = new Color32(41, 41, 41, 255);
 
-		private readonly Color STRIP_COLOR_LIGHT = new Color(0.7f, 0.7f, 0.7f);
+		private readonly Color STRIP_COLOR_LIGHT = new Color32(162, 162, 162, 255);
 
-		private readonly Color WINDOW_HEAD_COLOR = new Color(0.7f, 0.7f, 0.7f);
+		private readonly Color WINDOW_HEAD_COLOR_DARK = new Color32(41, 41, 41, 255);
+
+		private readonly Color WINDOW_HEAD_COLOR_LIGHT = new Color32(162, 162, 162, 255);
 
 
 
@@ -91,6 +94,8 @@ namespace SearchPRO {
 		private bool need_refocus;
 
 		private bool drag_scroll;
+
+		private bool drag_item;
 
 		private bool enable_already;
 
@@ -156,6 +161,8 @@ namespace SearchPRO {
 			if (!enable_already) {
 				//Unity bug fix
 				Undo.undoRedoPerformed += Close;
+
+				need_refocus = true;
 
 				if (styles == null) {
 					styles = new Styles();
@@ -335,7 +342,7 @@ namespace SearchPRO {
 		}
 
 		void OnGUI() {
-			if (focusedWindow != this || EditorApplication.isCompiling) {
+			if ((!(drag_item && DragAndDrop.objectReferences.Length > 0) && focusedWindow != this) || EditorApplication.isCompiling) {
 				Close();
 			}
 			if (!enable_already) {
@@ -344,7 +351,12 @@ namespace SearchPRO {
 
 			GUI.Box(new Rect(0.0f, 0.0f, base.position.width, base.position.height), GUIContent.none, styles.window_background);
 
-			EditorGUI.DrawRect(new Rect(1.0f, 1.0f, base.position.width - 2.0f, WINDOW_HEAD_HEIGHT - 1.0f), WINDOW_HEAD_COLOR);
+			if (EditorGUIUtility.isProSkin) {
+				EditorGUI.DrawRect(new Rect(1.0f, 1.0f, base.position.width - 2.0f, WINDOW_HEAD_HEIGHT - 1.0f), WINDOW_HEAD_COLOR_DARK);
+			}
+			else {
+				EditorGUI.DrawRect(new Rect(1.0f, 1.0f, base.position.width - 2.0f, WINDOW_HEAD_HEIGHT - 1.0f), WINDOW_HEAD_COLOR_LIGHT);
+			}
 
 			view_element_capacity = (int)((position.height - (WINDOW_HEAD_HEIGHT + (WINDOW_FOOT_OFFSET * 2))) / element_list_height);
 
@@ -354,9 +366,12 @@ namespace SearchPRO {
 			Rect search_rect = new Rect(15.0f, 10.0f, position.width - 30.0f, 30.0f);
 			Rect search_icon_rect = new Rect(20.0f, 13.0f, 23.0f, 23.0f);
 
+			GUISkin gui_skin = GUI.skin;
+			GUI.skin = GlobalSkin.skin;
 			// Search Bar 
 			GUI.SetNextControlName("GUIControlSearchBoxTextField");
 			new_search = GUI.TextField(search_rect, new_search, styles.search_bar);
+			GUI.skin = gui_skin;
 
 			if (need_refocus) {
 				GUI.FocusControl("GUIControlSearchBoxTextField");
@@ -375,7 +390,7 @@ namespace SearchPRO {
 
 				GUILayout.BeginHorizontal();
 				{
-					if (current_tree.content.text == "#Search") {
+					if (current_tree.isSearch) {
 						if (GUILayout.Button(new GUIContent("Home"), GUILayout.ExpandWidth(false), GUILayout.Height(20.0f))) {
 							GoToHome();
 						}
@@ -412,9 +427,9 @@ namespace SearchPRO {
 
 			sliderValue = Mathf.Round(GUI.HorizontalSlider(new Rect(position.width - 60.0f, 40.0f, 50.0f, 20.0f), sliderValue, 25, 50) / 5) * 5;
 
-			GUI.BeginClip(list_area);
-
 			PreInputGUI();
+
+			GUI.BeginClip(list_area);
 
 			int first_scroll_index = (int)Mathf.Clamp(scroll_pos, 0, current_tree_count);
 			int last_scroll_index = (int)Mathf.Clamp(scroll_pos + view_element_capacity + 2, 0, current_tree_count);
@@ -445,7 +460,7 @@ namespace SearchPRO {
 				}
 
 				if (enable_layout) {
-					if (enableTags) {
+					if (enableTags && node.tags != null && node.tags.Length > 0) {
 						//Draw Tag Buttons
 						GUILayout.BeginArea(new Rect(layout_rect.x, layout_rect.y + 5.0f, layout_rect.width, layout_rect.height));
 						GUILayout.BeginHorizontal();
@@ -468,9 +483,9 @@ namespace SearchPRO {
 				}
 				draw_index++;
 			}
-			PostInputGUI();
-
 			GUI.EndClip();
+
+			PostInputGUI();
 
 			if (enable_scroll && scroll_pos != 0.0f) {
 				Color gui_color = GUI.color;
@@ -489,6 +504,9 @@ namespace SearchPRO {
 
 		void GoToHome() {
 			GoToNode(root_tree, false);
+			enable_layout = false;
+			new_search = string.Empty;
+			need_refocus = true;
 		}
 
 		void GoToParent() {
@@ -499,10 +517,6 @@ namespace SearchPRO {
 
 		void GoToNode(TreeNode<SearchItem> node, bool call_if_is_leaf) {
 			if (node == null) return;
-			enable_layout = false;
-			new_search = string.Empty;
-			need_refocus = true;
-
 			if (node.isLeaf) {
 				if (call_if_is_leaf) {
 					if (node.data is CommandItem) {
@@ -513,14 +527,15 @@ namespace SearchPRO {
 						InterfaceItem interface_item = (InterfaceItem)node.data;
 						ContainerWindow.CreateNew((ISearchInterface)interface_item.search_interface, node.content, interface_item.close_on_lost_focus);
 					}
+					else if (node.data is ObjectItem) {
+						ObjectItem object_item = (ObjectItem)node.data;
+						EditorGUIUtility.PingObject(object_item.obj);
+					}
 					else {
-						Selection.activeObject = EditorUtility.InstanceIDToObject((int)node.data.data);
+						Debug.Log("No implemented function");
+						//Selection.activeObject = EditorUtility.InstanceIDToObject((int)node.data.data);
 					}
 					this.Close();
-				}
-				else {
-					GUI.FocusControl("GUIControlSearchBoxTextField");
-					need_refocus = true;
 				}
 			}
 			else {
@@ -602,12 +617,31 @@ namespace SearchPRO {
 					GoToNode(last_tree, false);
 				}
 				else {
-					TreeNode<SearchItem> search_result = last_tree;
-					search_result = search_result.GetTreeNodeInAllChildren(tn =>
+					string new_search_escape = Regex.Escape(new_search);
+					TreeNode<SearchItem> search_result = new TreeNode<SearchItem>(new GUIContent("#Search"));
+
+					foreach (string path in AssetDatabase.GetAllAssetPaths()) {
+						if (path.StartsWith("Packages/")) continue;
+
+						if (Regex.IsMatch(path, new_search_escape, RegexOptions.IgnoreCase)) {
+							UnityObject obj = AssetDatabase.LoadAssetAtPath<UnityObject>(path);
+							ObjectItem item = new ObjectItem(obj);
+							Texture icon = AssetPreview.GetAssetPreview(obj) ?? AssetDatabase.GetCachedIcon(path) ?? AssetPreview.GetMiniThumbnail(obj);
+							GUIContent content = new GUIContent(obj.name, icon, path);
+							search_result.AddChild(content, item);
+						}
+					}
+
+					TreeNode<SearchItem> root_search = root_tree.GetTreeNodeInAllChildren(tn =>
+
 					ValidateItem(tn.data)
-					&& Regex.IsMatch(tn.content.text, Regex.Escape(new_search), RegexOptions.IgnoreCase)
-							|| Regex.IsMatch(tn.content.tooltip, Regex.Escape(new_search), RegexOptions.IgnoreCase)
-							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(new_search, Regex.Escape(tag), RegexOptions.IgnoreCase))));
+					&& Regex.IsMatch(tn.content.text, new_search_escape, RegexOptions.IgnoreCase)
+							|| Regex.IsMatch(tn.content.tooltip, new_search_escape, RegexOptions.IgnoreCase)
+							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(new_search_escape, tag, RegexOptions.IgnoreCase))));
+
+					foreach (TreeNode<SearchItem> tree_node in root_search) {
+						search_result.AddAnExistingTreeNode(tree_node);
+					}
 
 					GoToNode(search_result, false);
 				}
@@ -665,12 +699,21 @@ namespace SearchPRO {
 
 		public string HighlightText(string text, string format) {
 			if (text.IsNullOrEmpty() || format.IsNullOrEmpty()) return text;
-			return Regex.Replace(text, format, (match) => string.Format("<color=#FFFF00><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
+			return Regex.Replace(text, Regex.Escape(format), (match) => string.Format("<color=#FFFF00><b>{0}</b></color>", match), RegexOptions.IgnoreCase);
 		}
 
-		public bool DrawElementList(Rect rect, GUIContent content, bool selected) {
-			Rect layout_rect = new Rect(rect);
-			bool trigger = GUI.Button(layout_rect, string.Empty, styles.label);
+		public bool DrawElementList(Rect layout_rect, GUIContent content, bool selected) {
+			bool trigger = false;
+			Event current = Event.current;
+
+			// My custom button =]
+			switch (current.type) {
+				case EventType.MouseUp:
+				if (layout_rect.Contains(current.mousePosition)) {
+					trigger = true;
+				}
+				break;
+			}
 
 			Rect icon_rect = new Rect(layout_rect.x + 10.0f, layout_rect.y, element_list_height, element_list_height);
 			Rect title_rect = new Rect(element_list_height + 5.0f, layout_rect.y, layout_rect.width - element_list_height - 10.0f, layout_rect.height);
@@ -694,7 +737,7 @@ namespace SearchPRO {
 				}
 			}
 
-			return !drag_scroll && trigger;
+			return !drag_scroll && !drag_item && trigger;
 		}
 
 		void PreInputGUI() {
@@ -702,17 +745,35 @@ namespace SearchPRO {
 
 			switch (current.type) {
 				case EventType.MouseDown:
+				drag_item = false;
 				drag_scroll = false;
 				break;
 				case EventType.ScrollWheel:
+				drag_item = false;
 				drag_scroll = true;
 				scroll_pos += current.delta.y;
 				current.Use();
 				break;
 				case EventType.MouseDrag:
-				drag_scroll = true;
-				scroll_pos -= current.delta.y / element_list_height;
-				current.Use();
+				if (!drag_scroll && !drag_item && Mathf.Abs(current.delta.x) > 0.8f && Mathf.Abs(current.delta.y) < 0.5f) {
+					if (selected_node.data is ObjectItem) {
+						DragAndDrop.PrepareStartDrag();
+						ObjectItem item = (ObjectItem)selected_node.data;
+						DragAndDrop.objectReferences = new UnityObject[] { item.obj };
+						DragAndDrop.StartDrag("Dragging " + item.obj.name);
+						Event.current.Use();
+						drag_item = true;
+					}
+					else {
+						drag_item = false;
+						drag_scroll = true;
+					}
+				}
+				if (!drag_item) {
+					drag_scroll = true;
+					scroll_pos -= current.delta.y / element_list_height;
+					current.Use();
+				}
 				break;
 			}
 		}
@@ -722,8 +783,10 @@ namespace SearchPRO {
 
 			switch (current.type) {
 				case EventType.KeyDown:
+				drag_item = false;
 				break;
 				case EventType.MouseUp:
+				drag_item = false;
 				drag_scroll = false;
 				break;
 			}
@@ -836,12 +899,13 @@ namespace SearchPRO {
 			float width = 0.0f;
 			foreach (TreeNode<SearchItem> node in current_tree) {
 				float tags_width = 0.0f;
-				if (enableTags) {
+				if (enableTags && node.tags != null && node.tags.Length > 0) {
 					foreach (string tag in node.tags) {
 						tags_width += GUIUtils.GetTextWidth(tag, styles.tag_button) + 5.0f;
 					}
 				}
 				width = Mathf.Max(width, GUIUtils.GetTextWidth(node.content.text, styles.search_title_item) + 85.0f + tags_width);
+				width = Mathf.Max(width, GUIUtils.GetTextWidth(node.content.tooltip, styles.search_description_item) + 85.0f);
 			}
 			width = Mathf.Max(Screen.currentResolution.width / 2.0f, width);
 			Vector2 pos = new Vector2(Screen.currentResolution.width / 2.0f - width / 2.0f, 100.0f);

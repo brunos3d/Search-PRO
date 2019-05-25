@@ -1469,7 +1469,7 @@ MonoBehaviour:
       m_Top: 0
       m_Bottom: 0
     m_Overflow:
-      m_Left: 0
+      m_Left: 1
       m_Right: 0
       m_Top: 1
       m_Bottom: 0
@@ -1820,5 +1820,5 @@ MonoBehaviour:
     m_DoubleClickSelectsWord: 1
     m_TripleClickSelectsLine: 1
     m_CursorColor: {r: 1, g: 1, b: 1, a: 1}
-    m_CursorFlashSpeed: -1
-    m_SelectionColor: {r: 1, g: 0.38403907, b: 0, a: 0.7}
+    m_CursorFlashSpeed: 1
+    m_SelectionColor: {r: 0.14489143, g: 0.4638786, b: 0.8301887, a: 0.7}
