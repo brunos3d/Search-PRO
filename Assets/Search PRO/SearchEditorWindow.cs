@@ -204,11 +204,13 @@ namespace SearchPRO {
 					// Verifica a existencia da interface
 					else if (type.GetInterfaces().Any(i => typeof(ISearchInterface).IsAssignableFrom(i))) {
 						SearchInterfaceAttribute t_interface = null;
+						IconAttribute t_icon = null;
 						CategoryAttribute t_category = null;
 						TitleAttribute t_title = null;
 						DescriptionAttribute t_description = null;
 						TagsAttribute t_tags = null;
 
+						Texture icon = null;
 						string category = string.Empty;
 						string title = string.Empty;
 						string description = string.Empty;
@@ -223,6 +225,12 @@ namespace SearchPRO {
 								}
 							}
 							else {
+								if (t_icon == null && attribute is IconAttribute) {
+									t_icon = (IconAttribute)attribute;
+									t_interface.icon = t_icon;
+									icon = t_icon.icon;
+									continue;
+								}
 								if (t_category == null && attribute is CategoryAttribute) {
 									t_category = (CategoryAttribute)attribute;
 									t_interface.category = t_category;
@@ -254,10 +262,10 @@ namespace SearchPRO {
 						if (t_interface != null) {
 							ISearchInterface si = (ISearchInterface)Activator.CreateInstance(type);
 							if (t_category == null) {
-								root_tree.AddChildByPath(new GUIContent(title, description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
+								root_tree.AddChildByPath(new GUIContent(title, icon, description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
 							}
 							else {
-								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), icon, description), new InterfaceItem(si, t_interface.close_on_lost_focus), tags);
 							}
 						}
 
@@ -269,10 +277,12 @@ namespace SearchPRO {
 						// Pega e verifica a existencia do attributo
 						CommandAttribute m_command = null;
 						CategoryAttribute m_category = null;
+						IconAttribute m_icon = null;
 						TitleAttribute m_title = null;
 						DescriptionAttribute m_description = null;
 						TagsAttribute m_tags = null;
 
+						Texture icon = null;
 						string category = string.Empty;
 						string title = string.Empty;
 						string description = string.Empty;
@@ -286,6 +296,12 @@ namespace SearchPRO {
 								}
 							}
 							else {
+								if (m_icon == null && attribute is IconAttribute) {
+									m_icon = (IconAttribute)attribute;
+									m_command.icon = m_icon;
+									icon = m_icon.icon;
+									continue;
+								}
 								if (m_category == null && attribute is CategoryAttribute) {
 									m_category = (CategoryAttribute)attribute;
 									m_command.category = m_category;
@@ -345,10 +361,10 @@ namespace SearchPRO {
 							}
 
 							if (m_category == null) {
-								root_tree.AddChildByPath(new GUIContent(title, description), new CommandItem(m_command, method, validation), tags);
+								root_tree.AddChildByPath(new GUIContent(title, icon, description), new CommandItem(m_command, method, validation), tags);
 							}
 							else {
-								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), description), new CommandItem(m_command, method, validation), tags);
+								root_tree.AddChildByPath(new GUIContent(string.Format("{0}/{1}", category, title), icon, description), new CommandItem(m_command, method, validation), tags);
 							}
 						}
 					}
@@ -549,7 +565,7 @@ namespace SearchPRO {
 						CommandItem command = (CommandItem)node.data;
 						ExecuteCommandItem(command);
 					}
-					if (node.data is ComponentItem) {
+					else if (node.data is ComponentItem) {
 						ComponentItem component = (ComponentItem)node.data;
 						foreach (GameObject go in Selection.gameObjects) {
 							if (go.activeInHierarchy && go.hideFlags != HideFlags.NotEditable) {
@@ -654,10 +670,14 @@ namespace SearchPRO {
 					TreeNode<SearchItem> search_result = new TreeNode<SearchItem>(new GUIContent("#Search"));
 
 					foreach (GameObject go in Resources.FindObjectsOfTypeAll<GameObject>().Where(go => go.activeInHierarchy && go.hideFlags != HideFlags.NotEditable && go.hideFlags != HideFlags.HideAndDontSave)) {
-						ObjectItem item = new ObjectItem(go);
-						Texture icon = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image;
-						GUIContent content = new GUIContent(go.name, icon, go.scene.name + "/" + go.name);
-						search_result.AddChild(content, item);
+						string[] tags = new string[2] { go.tag, LayerMask.LayerToName(go.layer) };
+						if (Regex.IsMatch(go.name, new_search_escape, RegexOptions.IgnoreCase)
+						|| (enableTags && tags.Any(tag => Regex.IsMatch(tag, new_search_escape, RegexOptions.IgnoreCase)))) {
+							ObjectItem item = new ObjectItem(go);
+							Texture icon = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image;
+							GUIContent content = new GUIContent(go.name, icon, go.scene.name + "/" + go.name);
+							search_result.AddChild(content, item, tags);
+						}
 					}
 
 					foreach (string path in AssetDatabase.GetAllAssetPaths()) {
@@ -668,6 +688,7 @@ namespace SearchPRO {
 							UnityObject obj = AssetDatabase.LoadAssetAtPath<UnityObject>(path);
 							ObjectItem item = new ObjectItem(obj);
 							Texture icon = AssetPreview.GetAssetPreview(obj) ?? AssetDatabase.GetCachedIcon(path) ?? AssetPreview.GetMiniThumbnail(obj);
+							string tag = obj.GetType().Name;
 
 							GUIContent content;
 							if (AssetDatabase.IsValidFolder(path)) {
@@ -678,7 +699,7 @@ namespace SearchPRO {
 								string description = string.Format("{0} ({1})", path, EditorUtility.FormatBytes(file_size));
 								content = new GUIContent(obj.name, icon, description);
 							}
-							search_result.AddChild(content, item);
+							search_result.AddChild(content, item, tag);
 						}
 					}
 
@@ -687,7 +708,7 @@ namespace SearchPRO {
 					ValidateItem(tn.data)
 					&& Regex.IsMatch(tn.content.text, new_search_escape, RegexOptions.IgnoreCase)
 							|| Regex.IsMatch(tn.content.tooltip, new_search_escape, RegexOptions.IgnoreCase)
-							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(new_search_escape, tag, RegexOptions.IgnoreCase))));
+							|| (enableTags && tn.tags.Any(tag => Regex.IsMatch(tag, new_search_escape, RegexOptions.IgnoreCase))));
 
 					foreach (TreeNode<SearchItem> tree_node in root_search) {
 						search_result.AddAnExistingTreeNode(tree_node);

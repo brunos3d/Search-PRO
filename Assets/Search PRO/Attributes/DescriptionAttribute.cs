@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 
 namespace SearchPRO {
@@ -12,4 +11,3 @@ namespace SearchPRO {
 		}
 	}
 }
-#endif

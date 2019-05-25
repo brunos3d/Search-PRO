@@ -11,7 +11,8 @@ namespace SearchPRO {
 		[Category("GameObject")]
 		[Title("Destroy Selection")]
 		[Description("Will remove selected objects from your scene.")]
-		[Tags("GOD", "GameObject", "Selection")]
+		[Icon(typeof(GameObject))]
+		[Tags("GOD")]
 		public static void DestroyGameObject(GameObject[] objs) {
 			foreach (GameObject go in objs) {
 				if (go.activeInHierarchy) {
@@ -23,8 +24,9 @@ namespace SearchPRO {
 		[Command]
 		[Category("GameObject")]
 		[Title("Duplicate")]
+		[Icon(typeof(GameObject))]
 		[Description("Creates a clone of selected object.")]
-		[Tags("GOC", "GameObject", "Selection")]
+		[Tags("GOC")]
 		public static void DuplicateGameObject(GameObject[] objs) {
 			foreach (GameObject go in objs) {
 				if (go.activeInHierarchy) {

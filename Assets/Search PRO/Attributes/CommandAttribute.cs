@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 
 namespace SearchPRO {
@@ -6,6 +5,7 @@ namespace SearchPRO {
 	public class CommandAttribute : Attribute {
 
 		public CategoryAttribute category;
+		public IconAttribute icon;
 		public TitleAttribute title;
 		public DescriptionAttribute description;
 		public TagsAttribute tags;
@@ -13,4 +13,3 @@ namespace SearchPRO {
 		public CommandAttribute() { }
 	}
 }
-#endif

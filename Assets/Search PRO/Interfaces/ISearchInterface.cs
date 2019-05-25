@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 namespace SearchPRO {
@@ -14,4 +13,3 @@ namespace SearchPRO {
 		void OnSelectionChange();
 	}
 }
-#endif
