@@ -9,13 +9,31 @@ namespace SearchPRO {
 
 		public string[] tags;
 
-		public GUIContent content;
+		public string title;
+		public Texture thumb;
+		public string description;
+
+		private GUIContent m_content;
+
+		public GUIContent content {
+			get {
+				return m_content ?? (m_content = new GUIContent(title, thumb, description));
+			}
+			set {
+				this.m_content = value;
+				this.title = value.text;
+				this.thumb = value.image;
+				this.description = value.tooltip;
+			}
+		}
 
 		public T data;
 
 		public TreeNode<T> parent;
 
-		public ICollection<TreeNode<T>> children_index;
+		public List<TreeNode<T>> all_children;
+
+		public List<TreeNode<T>> children_index;
 
 		public Dictionary<string, TreeNode<T>> children;
 
@@ -65,12 +83,12 @@ namespace SearchPRO {
 
 		public TreeNode<T> this[int index] {
 			get {
-				return children.ElementAt(index).Value;
+				return children_index[index];
 			}
 		}
 
 		public IEnumerator GetEnumerator() {
-			return children.Values.GetEnumerator();
+			return children.GetEnumerator();
 		}
 
 		public TreeNode() { }
@@ -78,26 +96,30 @@ namespace SearchPRO {
 		public TreeNode(GUIContent content) {
 			this.content = content;
 			this.children = new Dictionary<string, TreeNode<T>>();
-			this.children_index = new LinkedList<TreeNode<T>>();
+			this.all_children = new List<TreeNode<T>>();
+			this.children_index = new List<TreeNode<T>>();
 		}
 
 		public TreeNode(GUIContent content, T data) {
 			this.content = content;
 			this.data = data;
 			this.children = new Dictionary<string, TreeNode<T>>();
-			this.children_index = new LinkedList<TreeNode<T>>();
+			this.all_children = new List<TreeNode<T>>();
+			this.children_index = new List<TreeNode<T>>();
 		}
 
 		public TreeNode(GUIContent content, T data, params string[] tags) {
 			this.content = content;
 			this.data = data;
 			this.children = new Dictionary<string, TreeNode<T>>();
-			this.children_index = new LinkedList<TreeNode<T>>();
+			this.all_children = new List<TreeNode<T>>();
+			this.children_index = new List<TreeNode<T>>();
 			this.tags = tags;
 		}
 
 		public void AddAnExistingTreeNode(TreeNode<T> tree) {
 			this.children[tree.contentName] = tree;
+			children_index.Add(tree);
 			this.RegisterChildForSearch(tree);
 		}
 
@@ -108,6 +130,7 @@ namespace SearchPRO {
 			}
 			child_node = new TreeNode<T>(content, child, tags) { parent = this };
 			this.children[child_node.contentName] = child_node;
+			children_index.Add(child_node);
 			this.RegisterChildForSearch(child_node);
 			return child_node;
 		}
@@ -126,28 +149,27 @@ namespace SearchPRO {
 			else {
 				//1/2/3
 				//1/2/3/4/5
-				string subpath = path.Replace(string.Format("{0}/", root_path), string.Empty);
+				string subpath = path.Substring(root_path.Length + 1);
 				GUIContent subcontent = new GUIContent(subpath, content.image, content.tooltip);
 				if (children.TryGetValue(root_path + ":" + content.tooltip, out child_node)) {
 					return child_node.AddChildByPath(subcontent, data);
 				}
 				else {
 					child_node = AddChild(new GUIContent(root_path, content.image), default(T));
-					this.children[child_node.contentName] = child_node;
 					return child_node.AddChildByPath(subcontent, data, tags);
 				}
 			}
 		}
 
 		private void RegisterChildForSearch(TreeNode<T> child) {
-			children_index.Add(child);
+			all_children.Add(child);
 			if (parent != null) {
 				parent.RegisterChildForSearch(child);
 			}
 		}
 
 		public TreeNode<T> FindTreeNode(Func<TreeNode<T>, bool> predicate) {
-			return this.children_index.FirstOrDefault(predicate);
+			return this.all_children.FirstOrDefault(predicate);
 		}
 
 		public TreeNode<T> GetChildren() {
@@ -160,7 +182,7 @@ namespace SearchPRO {
 
 		public TreeNode<T> GetAllChildren() {
 			TreeNode<T> result_tree = new TreeNode<T>(new GUIContent("#Search"), default(T));
-			foreach (TreeNode<T> child in this.children_index) {
+			foreach (TreeNode<T> child in this.all_children) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
 			return result_tree;
@@ -176,7 +198,7 @@ namespace SearchPRO {
 
 		public TreeNode<T> GetTreeNodeInAllChildren(Func<TreeNode<T>, bool> predicate) {
 			TreeNode<T> result_tree = new TreeNode<T>(new GUIContent("#Search"), default(T));
-			foreach (TreeNode<T> child in this.children_index.Where(predicate)) {
+			foreach (TreeNode<T> child in this.all_children.Where(predicate)) {
 				result_tree.AddAnExistingTreeNode(child);
 			}
 			return result_tree;
